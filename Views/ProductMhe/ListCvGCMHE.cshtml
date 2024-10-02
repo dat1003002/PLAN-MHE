@@ -1,0 +1,93 @@
+@model IEnumerable<AspnetCoreMvcFull.ModelDTO.Product.ProductGCMHEDTO>
+
+@{
+	ViewData["Title"] = "Danh Sách Tiêu Chuẩn Công Việc MHE Gang Cầu";
+}
+<div class="d-flex justify-content-between">
+	<a asp-controller="ProductCvGCCtroller" asp-action="CreateProductGC" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
+		Thêm Mới
+	</a>
+	<form asp-action="Search" method="post" style="display: flex; align-items: center; margin-right: 20px;">
+		<div style="display: inline-flex; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
+			<input type="text" name="name" placeholder="Nhập tên sản phẩm để tìm kiếm" style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;" required />
+			<button type="submit" style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
+				Tìm kiếm
+			</button>
+		</div>
+	</form>
+</div>
+<div class="container mt-4">
+	<div class="row">
+		@foreach (var product in Model)
+		{
+			<div class="col-12 col-sm-6 col-md-4 mb-4">
+				<div class="card text-center custom-card" style="border: 2px solid black; display: flex; flex-direction: column;">
+					<div class="image-container">
+						<img class="card-img-top mx-auto custom-image" src="@Url.Content("~/images/" + product.image)" alt="Card image cap">
+						<div class="button-container">
+							<a asp-controller="ProductCvGCCtroller" asp-action="EditProductGCMHE" asp-route-id="@product.ProductId" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:2px; font-size:9px; border-radius:5px; text-decoration: none;">
+								<i class='bx bx-edit'></i>
+							</a>
+							<button type="button" onclick="deleteProduct(@product.ProductId)" style="margin: 0px; padding:3px; background: #B74635; color: white; border: #B74635; border-radius: 4px;">
+								<i class="bx bx-trash-alt"></i>
+							</button>
+						</div>
+					</div>
+					<div class="card-body-title"data-bs-toggle="modal" data-bs-target="#modalScrollable" onclick="loadProductGc(@product.ProductId)" style="margin-top: auto; cursor: pointer;">
+						<p class="custom-title">@product.name</p>
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+</div>
+
+<div class="modal fade" id="modalScrollable" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-scrollable" role="document" style="max-width: 100%; width: 100%; height: 100%; margin: 0;">
+		<div class="modal-content" style="height: 100%; border-radius: 0;">
+			<div class="modal-header d-flex justify-content-center" style="background:red; ">
+				<h5 class="modal-title" style="color:white; font-size:28px;">Bảng Hướng Dẫn Công Việc</h5>
+			</div>
+			<div class="modal-body" id="modalBody" style="text-align:center;">
+			</div>
+			<div class="modal-footer" style="background:red;">
+				<button type="button" class="btn btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+	<script>
+		function deleteProduct(productId) {
+			if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+			$.ajax({
+				url: '/ProductCvGCCtroller/DeleteProductCVGC',
+				type: 'POST',
+				data: { ProductId: productId },
+				success: function (result) {
+					alert("Sản phẩm đã được xóa thành công!");
+					location.reload();
+				},
+				error: function (xhr, status, error) {
+					alert("Có lỗi xảy ra: " + xhr.responseText);
+				}
+			});
+			}
+		}
+
+	function loadProductGc(productId) {
+		$.ajax({
+			url: '@Url.Action("ShowProductGcById", "ProductCvGCCtroller")',
+			type: 'GET',
+			data: { id: productId },
+			success: function (data) {
+				$('#modalBody').html(data);
+				$('#modalScrollable').modal('show');
+			},
+			error: function (xhr, status, error) {
+				console.error(xhr); // Log thông tin lỗi
+				alert('Có lỗi xảy ra khi tải dữ liệu sản phẩm.');
+			}
+		});
+	}
+</script>

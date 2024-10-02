@@ -5,9 +5,24 @@
 
 .menu .app-brand.demo {
   height: 64px;
-  margin-top: 12px;
 }
 
+.footer-addcategory {
+    padding:10px 25px;
+    text-align:right;
+}
+
+.btn-addcategory {
+  color: white;
+  background: #428BCA;
+  border: #428BCA solid 1px;
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 5px;
+}
+.footer-addcategory i {
+  font-size:12px;
+}
 .app-brand-logo.demo svg {
   width: 22px;
   height: 38px;
@@ -17,6 +32,75 @@
   font-size: 1.75rem;
   letter-spacing: -0.5px;
 }
+
+.card-body-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0px;
+  background: #EEEEEE;
+  padding: 10px;
+  border-radius: 0px 0px 5px 5px;
+  min-height:5rem;
+}
+.custom-title {
+  margin: 0px !important;
+  font-size: 14px;
+  color: black;
+  font-family: ui-serif;
+}
+
+.category-add i {
+  font-size: 11px;
+  padding: 3px;
+}
+
+.image-container {
+  position: relative;
+}
+
+.button-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none; 
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-container:hover .button-container {
+  display: flex; 
+}
+
+.image-container:hover img {
+  filter: brightness(0.7);
+}
+
+.button-container a {
+  display: inline-block;
+  color: white;
+  padding: 6px 12px; 
+  border-radius: 4px; 
+  transition: background-color 0.3s;
+}
+
+  .button-container a.btn-warning {
+    background-color: #ffc107;
+  }
+
+  .button-container a.btn-danger {
+    background-color: #dc3545;
+  }
+
+  .button-container a:hover.btn-warning {
+    background-color: #e0a800;
+  }
+
+  .button-container a:hover.btn-danger {
+    background-color: #c82333;
+  }
 
 /* ! For .layout-navbar-fixed added fix padding top to .layout-page */
 /* Detached navbar */

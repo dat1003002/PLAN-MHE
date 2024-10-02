@@ -2,6 +2,10 @@ using AspnetCoreMvcFull.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
+using AspnetCoreMvcFull.Repositories;
+using AspnetCoreMvcFull.Repository;
+using AspnetCoreMvcFull.Service;
+using AspnetCoreMvcFull.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -16,11 +20,20 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Thêm Identity
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+// Đăng ký Repository và Service
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductLTRepository, ProductLTRepository>();
+builder.Services.AddScoped<IProductLTService, ProductLTService>();
+builder.Services.AddScoped<IProductCvRepository, ProductCvRepository>();
+builder.Services.AddScoped<IProductCvService, ProductCvService>();
+builder.Services.AddScoped<IProductCvCTLRepository, ProductCvCTLRepository>();
+builder.Services.AddScoped<IProductCvCTLService, ProductCvCTLService>();
+builder.Services.AddScoped<IProductCvGCRepository, ProductCvGCRepository>();
+builder.Services.AddScoped<IProductCvGCService, ProductCvGCService>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
 
 //builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 var app = builder.Build();
@@ -35,7 +48,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.MapRazorPages();
 app.UseRouting();
 
 app.UseAuthorization();
