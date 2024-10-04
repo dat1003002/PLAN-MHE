@@ -2,6 +2,12 @@ using AspnetCoreMvcFull.ModelDTO.Product;
 using AspnetCoreMvcFull.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using PagedList; // Nếu bạn không cần sử dụng
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using X.PagedList;
 
 namespace AspnetCoreMvcFull.Controllers
 {
@@ -14,29 +20,46 @@ namespace AspnetCoreMvcFull.Controllers
       _productService = productService;
     }
 
-    // Hiển thị danh sách sản phẩm
-    public async Task<IActionResult> ListCvGCMHE()
+    public async Task<IActionResult> ListCvGCMHE(int page = 1, string searchName = null)
     {
-      var products = await _productService.GetProductsByCategoryAsync(5);
+      const int categoryId = 4;
+      const int pageSize = 10;
+
+      X.PagedList.IPagedList<ProductGCMHEDTO> products;
+      if (!string.IsNullOrEmpty(searchName))
+      {
+        products = await _productService.SearchProductsByNameAsync(searchName, categoryId, page, pageSize);
+      }
+      else
+      {
+        products = await _productService.GetProducts(categoryId, page, pageSize);
+      }
+
       return View("~/Views/ProductMhe/ListCvGCMHE.cshtml", products);
     }
+    [HttpPost]
+    public async Task<IActionResult> Search(string name, int page = 1)
+    {
+      const int categoryId = 4; // ID danh mục cố định
+      const int pageSize = 3;
 
-    // Hiển thị trang tạo sản phẩm mới
+      var products = await _productService.SearchProductsByNameAsync(name, categoryId, page, pageSize);
+
+      return View("~/Views/ProductMhe/ListCvGCMHE.cshtml", products);
+    }
     public async Task<IActionResult> CreateProductGC()
     {
-      var categories = await _productService.GetCategoriesAsync();
+      var categories = await _productService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View("~/Views/ProductMhe/CreateProductGC.cshtml");
     }
-
-    // Xử lý yêu cầu tạo sản phẩm mới
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateProductGC(ProductGCMHEDTO product)
     {
       if (!ModelState.IsValid)
       {
-        var categories = await _productService.GetCategoriesAsync();
+        var categories = await _productService.GetCategories();
         ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
         return View("~/Views/ProductMhe/CreateProductGC.cshtml", product);
       }
@@ -79,7 +102,6 @@ namespace AspnetCoreMvcFull.Controllers
       await _productService.AddProductAsync(product);
       return RedirectToAction("ListCvGCMHE", "ProductCvGCCtroller");
     }
-
     public async Task<IActionResult> EditProductGCMHE(int id)
     {
       var product = await _productService.GetProductByIdAsync(id);
@@ -88,19 +110,17 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      var categories = await _productService.GetCategoriesAsync();
+      var categories = await _productService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
       return View("~/Views/ProductMhe/EditProductGCMHE.cshtml", product);
     }
-
-    // Xử lý chỉnh sửa sản phẩm
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProductGCMHE(ProductGCMHEDTO product)
     {
       if (!ModelState.IsValid)
       {
-        var categories = await _productService.GetCategoriesAsync();
+        var categories = await _productService.GetCategories();
         ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
         return View("~/Views/ProductMhe/EditProductGCMHE.cshtml", product);
       }
@@ -146,17 +166,6 @@ namespace AspnetCoreMvcFull.Controllers
       await _productService.UpdateProductAsync(product);
       return RedirectToAction("ListCvGCMHE", "ProductCvGCCtroller");
     }
-
-
-    // Xử lý tìm kiếm sản phẩm
-    [HttpPost]
-    public async Task<IActionResult> Search(string name)
-    {
-      var products = await _productService.SearchProductsByNameAsync(name, 5);
-      return View("~/Views/ProductMhe/ListCvGCMHE.cshtml", products);
-    }
-
-    // Xóa sản phẩm
     [HttpPost]
     public async Task<IActionResult> DeleteProductCVGC(int ProductId)
     {

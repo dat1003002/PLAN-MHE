@@ -2,10 +2,12 @@ using AspnetCoreMvcFull.ModelDTO.Product;
 using AspnetCoreMvcFull.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using PagedList; // Nếu bạn không cần sử dụng
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList; // Nếu bạn cần sử dụng
 
 namespace AspnetCoreMvcFull.Controllers
 {
@@ -17,28 +19,41 @@ namespace AspnetCoreMvcFull.Controllers
     {
       _productCvService = productCvService;
     }
-
-    // GET: Danh sách tiêu chuẩn công việc
-    public async Task<IActionResult> ListTieuChuanCV()
+    public async Task<IActionResult> ListTieuChuanCV(int page = 1, string searchName = null)
     {
-      int categoryId = 2; // Lấy sản phẩm có categoryId = 2
-      var products = await _productCvService.GetProducts(categoryId);
-      if (products == null || !products.Any())
-      {
-        return View("~/Views/ProductMhe/ListTieuChuanCV.cshtml", new List<ProductDTO>());
-      }
+      const int categoryId = 2; // Lấy sản phẩm có categoryId = 2
+      const int pageSize = 10; // Số sản phẩm hiển thị trên mỗi trang
 
+      // Xác định rõ ràng loại IPagedList
+      X.PagedList.IPagedList<ProductDTO> products;
+      if (!string.IsNullOrEmpty(searchName))
+      {
+        products = await _productCvService.SearchProductsByNameAsync(searchName, categoryId, page, pageSize);
+      }
+      else
+      {
+        products = await _productCvService.GetProducts(categoryId, page, pageSize);
+      }
+      // Trả về view với danh sách sản phẩm đã lấy được
       return View("~/Views/ProductMhe/ListTieuChuanCV.cshtml", products);
     }
+    [HttpPost]
+    public async Task<IActionResult> Search(string name, int page = 1)
+    {
+      const int categoryId = 2; // ID danh mục cố định
+      const int pageSize = 10; // Số sản phẩm hiển thị trên mỗi trang
 
-    // GET: Tạo mới sản phẩm
+      var products = await _productCvService.SearchProductsByNameAsync(name, categoryId, page, pageSize);
+
+      // Trả về view với danh sách sản phẩm tìm kiếm được
+      return View("~/Views/ProductMhe/ListTieuChuanCV.cshtml", products);
+    }
     public async Task<IActionResult> CreateProductCV()
     {
       var categories = await _productCvService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View("~/Views/ProductMhe/CreateProductCV.cshtml");
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateProductCV(ProductDTO productDTO)
@@ -72,7 +87,6 @@ namespace AspnetCoreMvcFull.Controllers
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", productDTO.CategoryId);
       return View("~/Views/ProductMhe/CreateProductCV.cshtml", productDTO);
     }
-
     public async Task<IActionResult> EditProductCV(int id)
 {
     var product = await _productCvService.GetProductByIdAsync(id);
@@ -85,7 +99,6 @@ namespace AspnetCoreMvcFull.Controllers
     ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
     return View("~/Views/ProductMhe/EditProductCV.cshtml", product);
 }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProductCV(ProductDTO productDTO)
@@ -131,7 +144,6 @@ namespace AspnetCoreMvcFull.Controllers
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", productDTO.CategoryId);
       return View("~/Views/ProductMhe/EditProductCV.cshtml", productDTO);
     }
-
     [HttpPost]
     public async Task<IActionResult> DeleteProductCV(int ProductId)
     {
@@ -142,25 +154,6 @@ namespace AspnetCoreMvcFull.Controllers
 
       await _productCvService.DeleteProductAsync(ProductId);
       return Ok();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Search(string name)
-    {
-      const int categoryId = 2;
-      var products = await _productCvService.SearchProductsByNameAsync(name, categoryId);
-      return View("~/Views/ProductMhe/ListTieuChuanCV.cshtml", products);
-    }
-
-    public async Task<IActionResult> GetProductsByCategory(int categoryId)
-    {
-      var products = await _productCvService.GetProducts(categoryId);
-      if (products == null || !products.Any())
-      {
-        return View("~/Views/ProductMhe/ProductList.cshtml", new List<ProductDTO>());
-      }
-
-      return View("~/Views/ProductMhe/ProductList.cshtml", products); // Trả về danh sách sản phẩm trong view
     }
     public async Task<IActionResult> ShowProductCvById(int id)
     {

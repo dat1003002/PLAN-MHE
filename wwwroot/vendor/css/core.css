@@ -4321,7 +4321,7 @@ textarea.form-control-lg {
 }
 
 .card-header {
-  padding: var(--bs-card-cap-padding-y) var(--bs-card-cap-padding-x);
+  padding: 20px 20px 0px 20px;
   margin-bottom: 0;
   color: var(--bs-card-cap-color);
   background-color: var(--bs-card-cap-bg);
@@ -4592,32 +4592,6 @@ textarea.form-control-lg {
   color: var(--bs-breadcrumb-item-active-color);
 }
 
-.pagination {
-  --bs-pagination-padding-x: 0.5rem;
-  --bs-pagination-padding-y: 0.4809rem;
-  --bs-pagination-font-size: 0.9375rem;
-  --bs-pagination-color: #384551;
-  --bs-pagination-bg: rgba(34, 48, 62, 0.06);
-  --bs-pagination-border-width: 1px;
-  --bs-pagination-border-color: #ced1d5;
-  --bs-pagination-border-radius: 50%;
-  --bs-pagination-hover-color: #384551;
-  --bs-pagination-hover-bg: rgba(34, 48, 62, 0.06);
-  --bs-pagination-hover-border-color: #ced1d5;
-  --bs-pagination-focus-color: #384551;
-  --bs-pagination-focus-bg: rgba(34, 48, 62, 0.06);
-  --bs-pagination-focus-box-shadow: none;
-  --bs-pagination-active-color: #fff;
-  --bs-pagination-active-bg: #696cff;
-  --bs-pagination-active-border-color: #696cff;
-  --bs-pagination-disabled-color: #384551;
-  --bs-pagination-disabled-bg: rgba(34, 48, 62, 0.06);
-  --bs-pagination-disabled-border-color: #ced1d5;
-  display: flex;
-  padding-left: 0;
-  list-style: none;
-}
-
 .page-link {
   position: relative;
   display: block;
@@ -4666,19 +4640,6 @@ textarea.form-control-lg {
   border-radius: var(--bs-pagination-border-radius);
 }
 
-.pagination-lg {
-  --bs-pagination-padding-x: 0.9826rem;
-  --bs-pagination-padding-y: 0.681rem;
-  --bs-pagination-font-size: 1.0625rem;
-  --bs-pagination-border-radius: 50%;
-}
-
-.pagination-sm {
-  --bs-pagination-padding-x: 0.269rem;
-  --bs-pagination-padding-y: 0.3165rem;
-  --bs-pagination-font-size: 0.8125rem;
-  --bs-pagination-border-radius: 50%;
-}
 
 .badge {
   --bs-badge-padding-x: 0.77em;
@@ -5462,7 +5423,7 @@ textarea.form-control-lg {
 .modal-body {
   position: relative;
   flex: 1 1 auto;
-/*  padding: var(--bs-modal-padding);*/
+  padding: var(--bs-modal-padding);
 }
 
 .modal-footer {

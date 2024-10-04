@@ -9,10 +9,11 @@ namespace AspnetCoreMvcFull.Repository
   {
     Task AddProductAsync(ProductDTO productDTO);
     Task<IEnumerable<Category>> GetCategories();
-    Task<IEnumerable<ProductDTO>> GetProducts(int categoryId);
+    Task<IQueryable<ProductDTO>> GetProducts(int categoryId);
     Task DeleteProductAsync(int ProductId);
     Task<ProductDTO> GetProductByIdAsync(int productId);
     Task UpdateProductAsync(ProductDTO productDTO);
-    Task<IEnumerable<ProductDTO>> SearchProductsByNameAsync(string name, int categoryId);
+    Task<IQueryable<ProductDTO>> SearchProductsByNameAsync(string name, int categoryId);
+    Task<IEnumerable<ProductDTO>> SearchProductsByNameAsync(string name, int categoryId, int page, int pageSize);
   }
 }

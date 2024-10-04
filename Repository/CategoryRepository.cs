@@ -41,6 +41,7 @@ namespace AspnetCoreMvcFull.Repositories
     {
       return await _context.Categories.FindAsync(id);
     }
+ 
 
     public async Task UpdateCategoryAsync(Category category)
     {

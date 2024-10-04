@@ -1,18 +1,23 @@
-@model IEnumerable<AspnetCoreMvcFull.ModelDTO.Product.ProductDTO>
-
 @{
 	ViewData["Title"] = "Danh Sách Tiêu Chuẩn Công Việc MHE";
 }
+@using X.PagedList.Mvc.Core
+@using X.PagedList
+@model X.PagedList.IPagedList<AspnetCoreMvcFull.ModelDTO.Product.ProductDTO>
 <div class="d-flex justify-content-between">
 	<a asp-controller="ProductCv" asp-action="CreateProductCV" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
 		Thêm Mới
 	</a>
-	<form asp-action="Search" method="post" style="display: flex; align-items: center; margin-right: 20px;">
+	<form asp-controller="ProductCv" asp-action="Search" method="post" style="display: flex; align-items: center; margin-right: 20px;">
 		<div style="display: inline-flex; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
+			<input type="hidden" name="page" value="@Model.PageNumber" />
+
 			<input type="text"
 				   name="name"
 				   placeholder="Nhập tên sản phẩm để tìm kiếm"
-				   style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;" required />
+				   style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;"
+				   required
+				   value="@ViewData["SearchTerm"]" /> <!-- Giữ lại giá trị tìm kiếm -->
 			<button type="submit"
 					style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
 				Tìm kiếm
@@ -21,7 +26,6 @@
 	</form>
 </div>
 <div class="container mt-4">
-	
 	@if (Model == null || !Model.Any())
 	{
 		<div class="alert alert-warning">Không có tiêu chuẩn nào tên này.</div>
@@ -32,7 +36,7 @@
 			@foreach (var product in Model)
 			{
 				<div class="col-12 col-sm-6 col-md-4 mb-4">
-					<div class="card text-center custom-card" style="border: 2px solid black; display: flex; flex-direction: column;">
+					<div class="card text-center custom-card" style="border: 2px solid #a1a3a5; display: flex; flex-direction: column;">
 						<div class="image-container">
 							<img class="card-img-top mx-auto custom-image" src="@Url.Content("~/images/" + product.image)" alt="Card image cap">
 							<div class="button-container">
@@ -41,11 +45,37 @@
 							</div>
 						</div>
 						<div class="card-body-title" data-bs-toggle="modal" data-bs-target="#modalScrollable" onclick="loadProduct(@product.ProductId)" style="margin-top: auto; cursor: pointer;">
-						  <p class="custom-title">@product.name</p>
+							<p class="custom-title">@product.name</p>
 						</div>
-
 					</div>
 				</div>
+			}
+		</div>
+		<!-- Hiển thị phân trang -->
+		<div class="pagination">
+			@if (Model.PageCount > 1)
+			{
+				@if (Model.HasPreviousPage)
+				{
+					<a href="@Url.Action("ListTieuChuanCV", new { page = Model.PageNumber - 1, name = ViewData["SearchTerm"] })">&laquo; </a>
+				}
+
+				@for (int i = 1; i <= Model.PageCount; i++)
+				{
+					if (i == Model.PageNumber)
+					{
+						<a href="#" class="active">@i</a>
+					}
+					else
+					{
+						<a href="@Url.Action("ListTieuChuanCV", new { page = i, name = ViewData["SearchTerm"] })">@i</a>
+					}
+				}
+
+				@if (Model.HasNextPage)
+				{
+					<a href="@Url.Action("ListTieuChuanCV", new { page = Model.PageNumber + 1, name = ViewData["SearchTerm"] })"> &raquo;</a>
+				}
 			}
 		</div>
 	}
@@ -72,29 +102,29 @@
 				url: '/ProductCv/DeleteProductCV',
 				type: 'POST',
 				data: { ProductId: productId },
-				success: function(result) {
+				success: function (result) {
 					alert("Sản phẩm đã được xóa thành công!");
 					location.reload();
 				},
-				error: function(xhr, status, error) {
+				error: function (xhr, status, error) {
 					alert("Có lỗi xảy ra: " + xhr.responseText);
 				}
 			});
 		}
 	}
 	function loadProduct(productId) {
-    $.ajax({
-        url: '@Url.Action("ShowProductCvById", "ProductCv")',
-        type: 'GET',
-        data: { id: productId },
-        success: function (data) {
-            $('#modalBody').html(data);
-            $('#modalScrollable').modal('show');
-        },
-        error: function () {
-            alert('Có lỗi xảy ra khi tải dữ liệu sản phẩm.');
-        }
-    });
-}
+		$.ajax({
+			url: '@Url.Action("ShowProductCvById", "ProductCv")',
+			type: 'GET',
+			data: { id: productId },
+			success: function (data) {
+				$('#modalBody').html(data);
+				$('#modalScrollable').modal('show');
+			},
+			error: function () {
+				alert('Có lỗi xảy ra khi tải dữ liệu sản phẩm.');
+			}
+		});
+	}
 
 </script>

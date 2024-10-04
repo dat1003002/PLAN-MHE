@@ -12,5 +12,6 @@ namespace AspnetCoreMvcFull.Service
     Task<bool> CategoryHasProductsAsync(int categoryId);
     Task<Category> GetCategoryByIdAsync(int id);
     Task UpdateCategoryAsync(Category category);
+
   }
 }

@@ -58,5 +58,6 @@ namespace AspnetCoreMvcFull.Service
       _context.Categories.Update(category);
       await _context.SaveChangesAsync();
     }
+
   }
 }

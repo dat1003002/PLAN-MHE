@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Service;
+using PagedList;
 using System;
 using System.Threading.Tasks;
 
@@ -61,9 +62,17 @@ namespace AspnetCoreMvcFull.Controllers
         return View(category);
       }
     }
+    public async Task<IActionResult> Pagination(int? page)
+    {
+      int pageSize = 10; // Số mục trên mỗi trang
+      int pageNumber = page ?? 1; // Số trang hiện tại
 
-    // GET: /Category/EditCategory/id
-    // Hiển thị trang chỉnh sửa danh mục với dữ liệu hiện tại của danh mục
+      var categories = await _categoryService.GetAllCategoriesAsync();
+      var pagedList = categories.ToPagedList(pageNumber, pageSize); // Chuyển đổi danh sách sang dạng phân trang
+
+      return View(pagedList);
+    }
+
     [HttpGet]
     public async Task<IActionResult> EditCategory(int id)
     {
@@ -75,8 +84,6 @@ namespace AspnetCoreMvcFull.Controllers
       return View(category);
     }
 
-    // POST: /Category/EditCategory
-    // Cập nhật thông tin danh mục trong cơ sở dữ liệu
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditCategory(Category category)

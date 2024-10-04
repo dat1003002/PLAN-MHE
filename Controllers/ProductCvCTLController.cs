@@ -16,20 +16,38 @@ namespace AspnetCoreMvcFull.Controllers
       _productCvCTLService = productCvCTLService;
     }
 
-    public async Task<IActionResult> ListTieuChuanCTL()
+    public async Task<IActionResult> ListTieuChuanCTL(int page = 1, string searchName = null)
     {
-      int categoryId = 4;
-      var products = await _productCvCTLService.GetProductsByCategoryIdAsync(categoryId);
-      return View(products);
-    }
+    const int categoryId = 3;
+      const int pageSize = 10;
 
+
+      X.PagedList.IPagedList<ProductCTLDTO> products;
+      if (!string.IsNullOrEmpty(searchName))
+      {
+        products = await _productCvCTLService.SearchProductsByNameAsync(searchName, categoryId, page, pageSize);
+      }
+      else
+      {
+        products = await _productCvCTLService.GetProducts(categoryId, page, pageSize);
+      }
+      return View("~/Views/ProductCTL/ListTieuChuanCTL.cshtml", products);
+    }
+    [HttpPost]
+    public async Task<IActionResult> Search(string name, int page = 1)
+    {
+      const int categoryId = 3; // ID danh mục cố định
+      const int pageSize = 3;
+
+      var products = await _productCvCTLService.SearchProductsByNameAsync(name, categoryId, page, pageSize);
+      return View("ListTieuChuanCTL", products);
+    }
     public async Task<IActionResult> CreateProductCvCTL()
     {
-      var categories = await _productCvCTLService.GetCategoriesAsync();
+      var categories = await _productCvCTLService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View();
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateProductCvCTL(ProductCTLDTO product)
@@ -52,11 +70,10 @@ namespace AspnetCoreMvcFull.Controllers
         return RedirectToAction("ListTieuChuanCTL");
       }
 
-      var categories = await _productCvCTLService.GetCategoriesAsync();
+      var categories = await _productCvCTLService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View(product);
     }
-
     public async Task<IActionResult> EditProductCTL(int id)
     {
       var product = await _productCvCTLService.GetProductByIdAsync(id);
@@ -65,11 +82,10 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      var categories = await _productCvCTLService.GetCategoriesAsync();
+      var categories = await _productCvCTLService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View(product);
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProductCTL(ProductCTLDTO product)
@@ -102,23 +118,10 @@ namespace AspnetCoreMvcFull.Controllers
         return RedirectToAction("ListTieuChuanCTL");
       }
 
-      var categories = await _productCvCTLService.GetCategoriesAsync();
+      var categories = await _productCvCTLService.GetCategories();
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View(product);
     }
-
-    [HttpPost]
-    public async Task<IActionResult> Search(string name)
-    {
-      var products = await _productCvCTLService.SearchProductsByNameAsync(name, 4);
-      return View("ListTieuChuanCTL", products);
-    }
-    //[HttpPost]
-    //public async Task<IActionResult> Search(string name)
-    //{
-    //  var products = await _productCvCTLService.SearchProductsByNameAsync(name);
-    //  return View("ListTieuChuanCTL", products);
-    //}
     public async Task<IActionResult> ShowProductCvCTLById(int id)
     {
       var product = await _productCvCTLService.GetProductByIdAsync(id);
@@ -128,7 +131,6 @@ namespace AspnetCoreMvcFull.Controllers
       }
       return PartialView("~/Views/ProductCTL/ProductModalCvCTL.cshtml", product);
     }
-
     [HttpPost]
     public async Task<IActionResult> DeleteProductCVCTL(int ProductId)
     {

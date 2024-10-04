@@ -29,6 +29,21 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Paginations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TotalItems = table.Column<int>(type: "int", nullable: false),
+                    ItemsPerPage = table.Column<int>(type: "int", nullable: false),
+                    CurrentPage = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Paginations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Products",
                 columns: table => new
                 {
@@ -76,6 +91,9 @@ namespace AspnetCoreMvcFull.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Paginations");
+
             migrationBuilder.DropTable(
                 name: "Products");
 

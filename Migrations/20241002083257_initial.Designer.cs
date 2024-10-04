@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240918111728_initial")]
+    [Migration("20241002083257_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -54,6 +54,28 @@ namespace AspnetCoreMvcFull.Migrations
                     b.HasKey("CategoryId");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Pagination", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CurrentPage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemsPerPage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalItems")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Paginations");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Product", b =>

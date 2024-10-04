@@ -5,13 +5,13 @@ namespace AspnetCoreMvcFull.Repository
 {
   public interface IProductCvGCRepository
   {
-    Task<IEnumerable<ProductGCMHEDTO>> GetProductsByCategoryAsync(int categoryId);
-    Task DeleteProductAsync(int ProductId);
-    Task<IEnumerable<Category>> GetCategoriesAsync();
     Task AddProductAsync(ProductGCMHEDTO product);
-    Task<IEnumerable<ProductGCMHEDTO>> SearchProductsByNameAsync(string name, int categoryId);
+    Task<IEnumerable<Category>> GetCategories();
+    Task<IQueryable<ProductGCMHEDTO>> GetProducts(int categoryId);
+    Task DeleteProductAsync(int ProductId);
+    Task<ProductGCMHEDTO> GetProductByIdAsync(int productId);
     Task UpdateProductAsync(ProductGCMHEDTO product);
-    Task<ProductGCMHEDTO> GetProductByIdAsync(int id);
-
+    Task<IQueryable<ProductGCMHEDTO>> SearchProductsByNameAsync(string name, int categoryId);
+    Task<IEnumerable<ProductGCMHEDTO>> SearchProductsByNameAsync(string name, int categoryId, int page, int pageSize);
   }
 }

@@ -3,11 +3,10 @@
 @{
 	ViewData["Title"] = "Danh Mục Công Việc";
 }
-
 <div class="card">
 	<h5 class="card-header">Danh Mục Công Việc</h5>
 	<div class="table-responsive text-nowrap">
-		<table class="table">
+		<table id="datatable" class="table">
 			<thead class="table-light">
 				<tr>
 					<th>Tên Tiêu Chuẩn</th>
@@ -20,51 +19,58 @@
 			<tbody class="table-border-bottom-0">
 				@foreach (var category in Model)
 				{
-						<tr id="row-@category.CategoryId"> <!-- Thêm id cho hàng -->
-							<td>@category.CategoryName</td>
-							<td>@category.Tenxuong</td>
-							<td>@category.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-							<td>@category.LastUpdated.ToString("dd/MM/yyyy HH:mm")</td>
-							<td>
-								<div class="menu gap-2 border-none">
+					<tr id="row-@category.CategoryId">
+						<td>@category.CategoryName</td>
+						<td>@category.Tenxuong</td>
+						<td>@category.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+						<td>@category.LastUpdated.ToString("dd/MM/yyyy HH:mm")</td>
+						<td>
+							<div class="menu gap-2 border-none">
 								<a asp-controller="Category" asp-action="EditCategory" asp-route-id="@category.CategoryId" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:3px; font-size:9px; border-radius:5px; text-decoration: none;"><i class='bx bx-edit'></i></a>
-									<button type="button" aria-expanded="false" style="margin: 0px; background: #B74635; color: white; border: #B74635; border-radius: 4px;"
-											onclick="deleteCategory(@category.CategoryId)">
-										<i class="bx bx-trash-alt"></i>
-									</button>
-								</div>
-							</td>
-						</tr>
+								<button type="button" aria-expanded="false" style="margin: 0px; background: #B74635; color: white; border: #B74635; border-radius: 4px;"
+										onclick="deleteCategory(@category.CategoryId)">
+									<i class="bx bx-trash-alt"></i>
+								</button>
+							</div>
+						</td>
+					</tr>
 				}
 			</tbody>
 		</table>
 	</div>
 </div>
+@* <div class="pagination">
+	<a href="#">&laquo;</a>
+	<a href="#">1</a>
+	<a href="#" class="active">2</a>
+	<a href="#">3</a>
+	<a href="#">&raquo;</a>
+</div> *@
+
 
 <div class="foter-category" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 16px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); text-align: right; z-index: 1000;">
 	<a asp-controller="Category" asp-action="AddCategory" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">Thêm Mới</a>
 </div>
 
-<script>
-	function deleteCategory(id) {
-		if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-			$.ajax({
-				url: '@Url.Action("DeleteCategory", "Category")',
-				type: 'POST',
-				data: { id: id },
-				success: function (response) {
-					if (response.success) {
-						$('#row-' + id).remove();
-						alert("Danh mục đã được xóa thành công!");
-					} else {
-						alert("Có lỗi xảy ra khi xóa danh mục: " + response.message);
+	<script>
+		function deleteCategory(id) {
+			if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
+				$.ajax({
+					url: '@Url.Action("DeleteCategory", "Category")',
+					type: 'POST',
+					data: { id: id },
+					success: function (response) {
+						if (response.success) {
+							$('#row-' + id).remove();
+							alert("Danh mục đã được xóa thành công!");
+						} else {
+							alert("Có lỗi xảy ra khi xóa danh mục: " + response.message);
+						}
+					},
+					error: function () {
+						alert("Có lỗi xảy ra khi gửi yêu cầu.");
 					}
-				},
-				error: function () {
-					alert("Có lỗi xảy ra khi gửi yêu cầu.");
-				}
-			});
+				});
+			}
 		}
-	}
-</script>
-
+	</script>

@@ -9,5 +9,6 @@ namespace AspnetCoreMvcFull.Repository
     Task AddCategoryAsync(Category category);
     Task UpdateCategoryAsync(Category category);
     Task DeleteCategoryAsync(int id);
+
   }
 }

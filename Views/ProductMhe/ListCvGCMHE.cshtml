@@ -1,16 +1,27 @@
-@model IEnumerable<AspnetCoreMvcFull.ModelDTO.Product.ProductGCMHEDTO>
+
 
 @{
 	ViewData["Title"] = "Danh Sách Tiêu Chuẩn Công Việc MHE Gang Cầu";
 }
+@using X.PagedList.Mvc.Core
+@using X.PagedList
+@model X.PagedList.IPagedList<AspnetCoreMvcFull.ModelDTO.Product.ProductGCMHEDTO>
 <div class="d-flex justify-content-between">
 	<a asp-controller="ProductCvGCCtroller" asp-action="CreateProductGC" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
 		Thêm Mới
 	</a>
-	<form asp-action="Search" method="post" style="display: flex; align-items: center; margin-right: 20px;">
+	<form asp-controller="ProductCvGCCtroller" asp-action="Search" method="post" style="display: flex; align-items: center; margin-right: 20px;">
 		<div style="display: inline-flex; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
-			<input type="text" name="name" placeholder="Nhập tên sản phẩm để tìm kiếm" style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;" required />
-			<button type="submit" style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
+			<input type="hidden" name="page" value="@Model.PageNumber" />
+
+			<input type="text"
+				   name="name"
+				   placeholder="Nhập tên sản phẩm để tìm kiếm"
+				   style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;"
+				   required
+				   value="@ViewData["SearchTerm"]" /> <!-- Giữ lại giá trị tìm kiếm -->
+			<button type="submit"
+					style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
 				Tìm kiếm
 			</button>
 		</div>
@@ -21,7 +32,7 @@
 		@foreach (var product in Model)
 		{
 			<div class="col-12 col-sm-6 col-md-4 mb-4">
-				<div class="card text-center custom-card" style="border: 2px solid black; display: flex; flex-direction: column;">
+				<div class="card text-center custom-card" style="border: 2px solid #a1a3a5; display: flex; flex-direction: column;">
 					<div class="image-container">
 						<img class="card-img-top mx-auto custom-image" src="@Url.Content("~/images/" + product.image)" alt="Card image cap">
 						<div class="button-container">
@@ -38,6 +49,32 @@
 					</div>
 				</div>
 			</div>
+		}
+	</div>
+	<div class="pagination">
+		@if (Model.PageCount > 1)
+		{
+			@if (Model.HasPreviousPage)
+			{
+				<a href="@Url.Action("ListCvGCMHE", new { page = Model.PageNumber - 1, name = ViewData["SearchTerm"] })">&laquo;</a>
+			}
+
+			@for (int i = 1; i <= Model.PageCount; i++)
+			{
+				if (i == Model.PageNumber)
+				{
+					<a href="#" class="active">@i</a>
+				}
+				else
+				{
+					<a href="@Url.Action("ListCvGCMHE", new { page = i, name = ViewData["SearchTerm"] })">@i</a>
+				}
+			}
+
+			@if (Model.HasNextPage)
+			{
+				<a href="@Url.Action("ListCvGCMHE", new { page = Model.PageNumber + 1, name = ViewData["SearchTerm"] })"> &raquo;</a>
+			}
 		}
 	</div>
 </div>
@@ -85,7 +122,7 @@
 				$('#modalScrollable').modal('show');
 			},
 			error: function (xhr, status, error) {
-				console.error(xhr); // Log thông tin lỗi
+				console.error(xhr); 
 				alert('Có lỗi xảy ra khi tải dữ liệu sản phẩm.');
 			}
 		});

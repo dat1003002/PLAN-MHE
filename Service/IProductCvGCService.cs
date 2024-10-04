@@ -1,16 +1,20 @@
 using AspnetCoreMvcFull.ModelDTO.Product;
 using AspnetCoreMvcFull.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using X.PagedList;
 
 namespace AspnetCoreMvcFull.Service
 {
   public interface IProductCvGCService
   {
-    Task<IEnumerable<ProductGCMHEDTO>> GetProductsByCategoryAsync(int categoryId);
-    Task DeleteProductAsync(int ProductId);
-    Task<IEnumerable<Category>> GetCategoriesAsync();
     Task AddProductAsync(ProductGCMHEDTO product);
-    Task<IEnumerable<ProductGCMHEDTO>> SearchProductsByNameAsync(string name, int categoryId);
+    Task<IEnumerable<Category>> GetCategories();
+    Task<IPagedList<ProductGCMHEDTO>> GetProducts(int categoryId, int pageNumber, int pageSize);
+    Task DeleteProductAsync(int ProductId);
+    Task<ProductGCMHEDTO> GetProductByIdAsync(int productId);
     Task UpdateProductAsync(ProductGCMHEDTO product);
-    Task<ProductGCMHEDTO> GetProductByIdAsync(int id);
+    Task<IEnumerable<ProductGCMHEDTO>> SearchProductsByNameAsync(string name, int categoryId);
+    Task<IPagedList<ProductGCMHEDTO>> SearchProductsByNameAsync(string name, int categoryId, int page, int pageSize);
   }
 }

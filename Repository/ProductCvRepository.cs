@@ -30,25 +30,25 @@ namespace AspnetCoreMvcFull.Repository
       _context.Products.Add(product);
       await _context.SaveChangesAsync();
     }
-
     public async Task<IEnumerable<Category>> GetCategories()
     {
       return await _context.Categories.ToListAsync();
     }
-
-    public async Task<IEnumerable<ProductDTO>> GetProducts(int categoryId)
+    public Task<IQueryable<ProductDTO>> GetProducts(int categoryId)
     {
-      return await _context.Products
-          .Where(p => p.CategoryId == categoryId)
-          .Select(p => new ProductDTO
-          {
-            ProductId = p.ProductId,
-            name = p.name,
-            image = p.image,
-            CategoryId = p.CategoryId
-          }).ToListAsync();
-    }
+      var products = _context.Products
+                             .Where(p => p.CategoryId == categoryId)
+                             .Select(p => new ProductDTO
+                             {
+                               ProductId = p.ProductId,
+                               name = p.name,
+                               image = p.image,
+                               CategoryId = p.CategoryId
+                             });
 
+      // Trả về IQueryable trực tiếp mà không cần sử dụng Task.FromResult
+      return Task.FromResult(products);
+    }
     public async Task DeleteProductAsync(int ProductId)
     {
       var product = await _context.Products.FindAsync(ProductId);
@@ -58,7 +58,6 @@ namespace AspnetCoreMvcFull.Repository
         await _context.SaveChangesAsync();
       }
     }
-
     public async Task<ProductDTO> GetProductByIdAsync(int productId)
     {
       return await _context.Products
@@ -83,17 +82,36 @@ namespace AspnetCoreMvcFull.Repository
         await _context.SaveChangesAsync();
       }
     }
-    public async Task<IEnumerable<ProductDTO>> SearchProductsByNameAsync(string name, int categoryId)
+    public async Task<IEnumerable<ProductDTO>> SearchProductsByNameAsync(string name, int categoryId, int page, int pageSize)
     {
-      return await _context.Products
-          .Where(p => p.name.Contains(name) && p.CategoryId == categoryId) // Tìm kiếm theo name và categoryId
+      var products = await _context.Products
+          .Where(p => p.name.Contains(name) && p.CategoryId == categoryId)  
+          .Skip((page - 1) * pageSize)                                      
+          .Take(pageSize)                                                   
           .Select(p => new ProductDTO
           {
             ProductId = p.ProductId,
             name = p.name,
             image = p.image,
             CategoryId = p.CategoryId
-          }).ToListAsync();
+          })
+          .ToListAsync();
+
+      return products;
+    }
+    public Task<IQueryable<ProductDTO>> SearchProductsByNameAsync(string name, int categoryId)
+    {
+      var products = _context.Products
+          .Where(p => p.name.Contains(name) && p.CategoryId == categoryId)
+          .Select(p => new ProductDTO
+          {
+            ProductId = p.ProductId,
+            name = p.name,
+            image = p.image,
+            CategoryId = p.CategoryId
+          });
+
+      return Task.FromResult(products.AsQueryable());
     }
   }
 }

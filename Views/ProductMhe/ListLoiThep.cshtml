@@ -7,21 +7,9 @@
 <div class="card">
 	<div class="card-header-title d-flex align-items-center justify-content-between">
 		<h5 class="card-header me-2">Tiêu Chuẩn Lõi Thép MHE</h5>
-		<form asp-action="Search" method="get" onsubmit="return validateForm()" style="display: flex; align-items: center; margin-right: 20px;">
-			<div style="display: inline-flex; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
-				<input type="text"
-					   name="searchString"
-					   placeholder="Nhập tên sản phẩm để tìm kiếm"
-					   style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;" required />
-				<button type="submit"
-						style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
-					Tìm kiếm
-				</button>
-			</div>
-		</form>
-	</div>
+		</div>
 	<div class="table-responsive text-nowrap">
-		<table class="table">
+		<table class="table" id="datatable">
 			<thead class="table-light">
 				<tr>
 					<th>Mã Hàng</th>
@@ -72,8 +60,6 @@
 		</table>
 	</div>
 </div>
-
-
 <div class="foter-category" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 16px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); text-align: right; z-index: 1000;">
 	<a asp-controller="ProductMhe" asp-action="CreateProductLT" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
 		Thêm Mới
