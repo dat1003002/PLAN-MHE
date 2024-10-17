@@ -18,9 +18,8 @@ namespace AspnetCoreMvcFull.Controllers
 
     public async Task<IActionResult> ListTieuChuanCTL(int page = 1, string searchName = null)
     {
-    const int categoryId = 3;
-      const int pageSize = 10;
-
+      const int categoryId = 3;
+      const int pageSize = 9;
 
       X.PagedList.IPagedList<ProductCTLDTO> products;
       if (!string.IsNullOrEmpty(searchName))
@@ -37,7 +36,7 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> Search(string name, int page = 1)
     {
       const int categoryId = 3; // ID danh mục cố định
-      const int pageSize = 3;
+      const int pageSize = 9;
 
       var products = await _productCvCTLService.SearchProductsByNameAsync(name, categoryId, page, pageSize);
       return View("ListTieuChuanCTL", products);
@@ -45,9 +44,11 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> CreateProductCvCTL()
     {
       var categories = await _productCvCTLService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filtercategories = categories.Where(c => c.CategoryId == 3).ToList();
+      ViewBag.CategoryList = new SelectList(filtercategories, "CategoryId", "CategoryName");
       return View();
     }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateProductCvCTL(ProductCTLDTO product)

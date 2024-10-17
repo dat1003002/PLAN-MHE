@@ -40,12 +40,6 @@ namespace AspnetCoreMvcFull.Services
     {
       return await _productLTRepository.GetProductsByCategoryIdAsync(categoryId); // Lấy sản phẩm theo ID danh mục thông qua repository
     }
-    public async Task<IEnumerable<Product>> SearchProductsByNameAsync(string name)
-    {
-      return await _productLTRepository.SearchProductsByNameAsync(name); // Tìm kiếm sản phẩm qua repository
-    }
-
-
     public async Task UpdateProductAsync(Product product)
     {
       await _productLTRepository.UpdateProductAsync(product);

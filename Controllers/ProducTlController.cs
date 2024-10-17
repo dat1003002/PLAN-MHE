@@ -20,7 +20,6 @@ namespace AspnetCoreMvcFull.Controllers
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
       return View();
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateProductLT(Product product)
@@ -41,7 +40,6 @@ namespace AspnetCoreMvcFull.Controllers
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
       return View(product);
     }
-
     public async Task<IActionResult> DeleteProductLT(int id)
     {
       try
@@ -55,7 +53,6 @@ namespace AspnetCoreMvcFull.Controllers
         return Json(new { success = false, message = "Có lỗi xảy ra khi xóa sản phẩm." });
       }
     }
-
     public async Task<IActionResult> EditProductLT(int id)
     {
       var product = await _productService.GetProductByIdAsync(id);
@@ -69,20 +66,17 @@ namespace AspnetCoreMvcFull.Controllers
 
       return View(product);
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProductLT(Product product)
     {
       try
       {
-        Console.WriteLine("Updating product with ID: " + product.ProductId);
         await _productService.UpdateProductAsync(product);
         return RedirectToAction(nameof(ListLoiThep));
       }
       catch (Exception ex)
       {
-        Console.WriteLine("Exception occurred: " + ex.Message);
         ModelState.AddModelError("", "Có lỗi xảy ra khi cập nhật sản phẩm.");
       }
 
@@ -91,29 +85,7 @@ namespace AspnetCoreMvcFull.Controllers
       ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
       return View(product);
     }
-
-    public async Task<IActionResult> Search(string searchString)
-    {
-      // Kiểm tra chuỗi tìm kiếm
-      if (string.IsNullOrEmpty(searchString))
-      {
-        // Nếu không có chuỗi tìm kiếm, có thể redirect đến danh sách sản phẩm hoặc hiển thị danh sách rỗng
-        return RedirectToAction(nameof(ListLoiThep));
-      }
-
-      // Tìm sản phẩm theo tên
-      var products = await _productService.SearchProductsByNameAsync(searchString);
-
-      // Kiểm tra nếu không tìm thấy sản phẩm nào
-      if (products == null || !products.Any())
-      {
-        ViewBag.Message = "Không có sản phẩm tên này."; // Đặt thông điệp vào ViewBag
-      }
-
-      // Trả về view với danh sách sản phẩm tìm kiếm
-      return View("ListLoiThep", products);
-    }
-
+   
     public async Task<IActionResult> ListLoiThep()
     {
       int categoryId = 1;

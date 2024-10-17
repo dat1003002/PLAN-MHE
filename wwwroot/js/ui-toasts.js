@@ -11,7 +11,6 @@
     toastPlacementBtn = document.querySelector('#showToastPlacement');
   let selectedType, selectedPlacement, toastPlacement;
 
-  // Dispose toast when open another
   function toastDispose(toast) {
     if (toast && toast._element !== null) {
       if (toastPlacementExample) {

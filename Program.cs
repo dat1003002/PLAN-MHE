@@ -31,6 +31,10 @@ builder.Services.AddScoped<IProductCvCTLRepository, ProductCvCTLRepository>();
 builder.Services.AddScoped<IProductCvCTLService, ProductCvCTLService>();
 builder.Services.AddScoped<IProductCvGCRepository, ProductCvGCRepository>();
 builder.Services.AddScoped<IProductCvGCService, ProductCvGCService>();
+builder.Services.AddScoped<IProductCSDRepository, ProductCSDRepository>();
+builder.Services.AddScoped<IProductCSDService, ProductCSDService>();
+builder.Services.AddScoped<IProductCSCTLRepository, ProductCSCTLRepository>();
+builder.Services.AddScoped<IProductCSCTLService, ProductCSCTLService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

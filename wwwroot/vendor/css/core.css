@@ -3702,7 +3702,7 @@ textarea.form-control-lg {
   padding: var(--bs-nav-link-padding-y) var(--bs-nav-link-padding-x);
   font-size: var(--bs-nav-link-font-size);
   font-weight: var(--bs-nav-link-font-weight);
-  color: var(--bs-nav-link-color);
+  color: white;
   background: none;
   border: 0;
   transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
@@ -3762,9 +3762,9 @@ textarea.form-control-lg {
   --bs-nav-pills-link-active-color: #fff;
   --bs-nav-pills-link-active-bg: transparent;
 }
-.nav-pills .nav-link {
+/*.nav-pills .nav-link {
   border-radius: var(--bs-nav-pills-border-radius);
-}
+}*/
 .nav-pills .nav-link.active,
 .nav-pills .show > .nav-link {
   color: var(--bs-nav-pills-link-active-color);
@@ -8452,9 +8452,9 @@ li:not(:first-child) .dropdown-item, .dropdown-menu .dropdown-item:not(:first-ch
 .nav {
   flex-wrap: inherit;
 }
-.nav.nav-pills:not(.nav-align-right):not(.nav-align-left) {
-  flex-wrap: wrap;
-}
+  .nav.nav-pills:not(.nav-align-right):not(.nav-align-left) {
+    flex-wrap: wrap;
+  }
 .nav .nav-item {
   white-space: nowrap;
 }
@@ -8532,11 +8532,14 @@ li:not(:first-child) .dropdown-item, .dropdown-menu .dropdown-item:not(:first-ch
 
 .nav-pills .nav-link {
   padding: 0.5435rem 1.375rem;
+  background: #428BCA;
+  color: white;
+  /*  border: 1px solid #428BCA;*/
 }
 .nav-pills .nav-item .nav-link:not(.active):hover {
   border-bottom: none;
   padding-bottom: 0.5435rem;
-  background-color: rgba(105, 108, 255, 0.16);
+/*  background-color: rgba(105, 108, 255, 0.16);*/
 }
 .nav-pills ~ .tab-content {
   box-shadow: 0 0.1875rem 0.5rem 0 rgba(34, 48, 62, 0.1);
@@ -8699,10 +8702,10 @@ li:not(:first-child) .dropdown-item, .dropdown-menu .dropdown-item:not(:first-ch
 .nav-align-bottom > .tab-content .tab-pane.show {
   transform: translateX(0px) !important;
 }
-.nav-align-top > .nav.nav-pills .nav-item:not(:last-child),
+/*.nav-align-top > .nav.nav-pills .nav-item:not(:last-child),
 .nav-align-bottom > .nav.nav-pills .nav-item:not(:last-child) {
   margin-right: 0.25rem;
-}
+}*/
 
 .nav-align-right {
   flex-direction: row-reverse;
@@ -11607,9 +11610,9 @@ button.list-group-item-gray.active {
   margin-bottom: 1.25rem !important;
 }
 
-.mb-6 {
+/*.mb-6 {
   margin-bottom: 1.5rem !important;
-}
+}*/
 
 .mb-7 {
   margin-bottom: 1.75rem !important;

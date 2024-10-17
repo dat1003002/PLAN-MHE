@@ -12,8 +12,7 @@ namespace AspnetCoreMvcFull.Service
     {
       _productRepository = productRepository;
     }
-
-    public async Task AddProductAsync(ProductGCMHEDTO product)
+    public async Task AddProductAsync (ProductGCMHEDTO product)
     {
       await _productRepository.AddProductAsync(product);
     }

@@ -50,15 +50,6 @@ namespace AspnetCoreMvcFull.Repositories
           .ToListAsync(); // Lấy danh sách sản phẩm
     }
 
-    public async Task<IEnumerable<Product>> SearchProductsByNameAsync(string name)
-    {
-      if (string.IsNullOrEmpty(name)) return await _context.Products.ToListAsync(); // Trả về tất cả nếu không có tên tìm kiếm
-
-      return await _context.Products
-          .Where(p => p.name.Contains(name)) // Sử dụng thuộc tính 'name'
-          .ToListAsync(); // Lấy danh sách sản phẩm
-    }
-
     public async Task UpdateProductAsync(Product product)
     {
       _context.Products.Update(product);

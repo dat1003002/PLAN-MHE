@@ -2,7 +2,7 @@ using AspnetCoreMvcFull.ModelDTO.Product;
 using AspnetCoreMvcFull.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using PagedList; // Nếu bạn không cần sử dụng
+using PagedList;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,8 +40,8 @@ namespace AspnetCoreMvcFull.Controllers
     [HttpPost]
     public async Task<IActionResult> Search(string name, int page = 1)
     {
-      const int categoryId = 4; // ID danh mục cố định
-      const int pageSize = 3;
+      const int categoryId = 4;
+      const int pageSize = 10;
 
       var products = await _productService.SearchProductsByNameAsync(name, categoryId, page, pageSize);
 
@@ -63,14 +63,11 @@ namespace AspnetCoreMvcFull.Controllers
         ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
         return View("~/Views/ProductMhe/CreateProductGC.cshtml", product);
       }
-
-      // Xử lý lưu trữ hình ảnh
       if (product.imageFile != null && product.imageFile.Length > 0)
       {
         var fileName = Path.GetFileName(product.imageFile.FileName);
         var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
 
-        // Tạo thư mục nếu chưa tồn tại
         if (!Directory.Exists(directoryPath))
         {
           Directory.CreateDirectory(directoryPath);
@@ -78,7 +75,6 @@ namespace AspnetCoreMvcFull.Controllers
 
         var filePath = Path.Combine(directoryPath, fileName);
 
-        // Kiểm tra trùng tên file
         if (System.IO.File.Exists(filePath))
         {
           // Thay đổi tên file nếu đã tồn tại
@@ -97,8 +93,6 @@ namespace AspnetCoreMvcFull.Controllers
           await product.imageFile.CopyToAsync(stream);
         }
       }
-
-      // Thêm sản phẩm vào cơ sở dữ liệu
       await _productService.AddProductAsync(product);
       return RedirectToAction("ListCvGCMHE", "ProductCvGCCtroller");
     }

@@ -1,35 +1,19 @@
-namespace AspnetCoreMvcFull.Models
+namespace AspnetCoreMvcFull.ModelDTO.Product
 {
-  public class Product
+  public class ProductCSDDTO
   {
     public int ProductId { get; set; }
     public int? mahang { get; set; }
     public string? name { get; set; }
-    public string? image {  get; set; }
-    public string? quycachloithep { get; set; }
-    public string? khuonlodie { get; set; }
-    public string? khuonsoiholder { get; set; }
-    public int? sosoi { get; set;}
-    public string? pitch { get; set; }
-    public string? tieuchuan { get; set; }
-    public string? thucte { get; set; }
-    public string? doday {  get; set; }
-    public string? soi1 { get; set; }
-    public string? soi2 { get; set; }
-    public string? sodaycatduoc { get; set; }
-    public string? chieudaicatlon {  get; set; }
-    public string? chieudaicatnho { get; set; }
-    public  string? tocdomaydun {  get; set; }
-    public string? tocdokeo { get; set; }
     public string? may { get; set; }
     public string? solinkthanchinh { get; set; }
     public string? solinkthannoi { get; set; }
     public string? caosuloplot { get; set; }
-    public string? caosubemat {  get; set; }
+    public string? caosubemat { get; set; }
     public string? docoloplot { get; set; }
     public string? docobemat { get; set; }
     public string? khuondunloplot { get; set; }
-    public string? khuondunbemat {  get; set; }
+    public string? khuondunbemat { get; set; }
     public string? khotieuchuanloplot { get; set; }
     public string? khotieuchuanbemat { get; set; }
     public string? chieudaithanchinhloplot { get; set; }
@@ -43,7 +27,5 @@ namespace AspnetCoreMvcFull.Models
     public DateTime? CreatedAt { get; set; } = DateTime.Now;
     public DateTime? UpdatedAt { get; set; }
     public int CategoryId { get; set; }
-    public Category Category { get; set; }
-
   }
 }

@@ -12,7 +12,6 @@ namespace AspnetCoreMvcFull.Service
     Task DeleteProductAsync(int productId); // Xóa sản phẩm theo ID
     Task<Product> GetProductByIdAsync(int id); // Lấy sản phẩm theo ID
     Task UpdateProductAsync(Product product); // Cập nhật sản phẩm
-    Task<IEnumerable<Product>> SearchProductsByNameAsync(string name);
 
   }
 }

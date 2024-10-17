@@ -1,0 +1,196 @@
+@model AspnetCoreMvcFull.ModelDTO.Product.ProductCSDDTO
+@{
+	ViewData["Title"] = "Cao Su Đùn";
+}
+<div class="row">
+	<div class="col-xxl">
+		<div class="card mb-6">
+			<div class="card-header d-flex align-items-center justify-content-between" style="padding-bottom: 20px;">
+				<h5 class="mb-0">Chỉnh Sửa Công Việc Cao Su Đùn </h5>
+			</div>
+			<div class="card-body">
+				<form asp-action="EditProductCSD" method="post">
+					@Html.AntiForgeryToken()
+					<input type="hidden" asp-for="ProductId" />
+					<div class="row">
+						<!-- Cột bên trái -->
+						<div class="col-md-6">
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-name" style="font-size: 16px; font-weight:600;">Số Máy # :</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="may" placeholder="Số Máy #" />
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-name" style="font-size: 16px; font-weight:600;">Mã Quy Cách :</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="mahang" placeholder="Mã Quy Cách" />
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-company" style="font-size: 16px; font-weight:600;">Tên Quy Cách :</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="name" placeholder="Tên Quy Cách" />
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-name" style="font-size: 16px; font-weight:600;">Số Link</label>
+								<div class="col-sm-8">
+									<div class="row">
+										<div class="col">
+											<label class="form-label text-center" for="mahang">Thân Chính</label>
+											<input type="text" class="form-control" asp-for="solinkthanchinh" placeholder="Thân Chính" />
+										</div>
+										<div class="col">
+											<label class="form-label text-center" for="anotherField">Thân Nối</label>
+											<input type="text" class="form-control" asp-for="solinkthannoi" placeholder="Thân Nối" />
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-name" style="font-size: 16px; font-weight:600;">Loại Cao Su</label>
+								<div class="col-sm-8">
+									<div class="row">
+										<div class="col">
+											<label class="form-label text-center" for="mahang">Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="caosuloplot" placeholder="Cao Su Lớp Lót" />
+										</div>
+										<div class="col">
+											<label class="form-label text-center" for="anotherField">Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="caosubemat" placeholder="Cao Su Bề Mặt" />
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-name" style="font-size: 16px; font-weight:600;">Độ Co Rút(mm)</label>
+								<div class="col-sm-8">
+									<div class="row">
+										<div class="col">
+											<label class="form-label text-center" for="mahang">Độ Co Rút Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="docoloplot" placeholder="Độ Co Rút Lớp Lót" />
+										</div>
+										<div class="col">
+											<label class="form-label text-center" for="anotherField">Độ Co Rút Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="docobemat" placeholder="Độ Co Rút Bề Mặt" />
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="basic-default-name" style="font-size: 16px; font-weight:600;">Khuôn Đùn</label>
+								<div class="col-sm-8">
+									<div class="row">
+										<div class="col">
+											<label class="form-label text-center" for="mahang">Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="khuondunloplot" placeholder="Khuôn Đùn Lớp Lót" />
+										</div>
+										<div class="col">
+											<label class="form-label text-center" for="anotherField">Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="khuondunbemat" placeholder="Khuôn Đùn Bề Mặt" />
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Cột bên phải -->
+						<div class="col-md-6">
+							<div class="row mb-3 text-center">
+								<div class="col-sm-12">
+									<label class="form-label" for="anotherField" style="font-size: 16px; font-weight:600;">Khổ Tiêu Chuẩn (#5mm)</label>
+								</div>
+								<div class="col-sm-12">
+									<div class="row">
+										<div class="col">
+											<label class="form-label" for="anotherField"> Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="khotieuchuanloplot" />
+										</div>
+										<div class="col">
+											<label class="form-label" for="mahang"> Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="khotieuchuanbemat" />
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="row mb-3 text-center">
+								<div class="col-sm-12">
+									<label class="form-label" for="anotherField" style="font-size: 16px; font-weight:600;">Chiều Dài Tiêu Chuẩn (#10mm)</label>
+								</div>
+								<div class="col-sm-12">
+									<div class="row">
+										<div class="col">
+											<label class="form-label" for="anotherField">Chiều Dài Thân Chính Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="chieudaithanchinhloplot" />
+										</div>
+										<div class="col">
+											<label class="form-label" for="mahang">Chiều Dài Thân Chính Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="chieudaithanchinhbemat" />
+										</div>
+									</div>
+									<div class="row">
+										<div class="col">
+											<label class="form-label" for="anotherField">Chiều Dài Thân Nối Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="chieudaithannoiloplot" />
+										</div>
+										<div class="col">
+											<label class="form-label" for="mahang">Chiều Dài Thân Nối Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="chieudaithannoibemat" />
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="row mb-3 text-center">
+								<div class="col-sm-12">
+									<label class="form-label" for="anotherField" style="font-size: 16px; font-weight:600;">Trọng Lượng Tiêu Chuẩn(+0,-15%kg)</label>
+								</div>
+								<div class="col-sm-12">
+									<div class="row">
+										<div class="col">
+											<label class="form-label" for="anotherField">Trọng Lượng Thân Chính Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="trongluongthanchinhloplot" />
+										</div>
+										<div class="col">
+											<label class="form-label" for="mahang">Trọng Lượng Thân Chính Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="trongluongthanchinhbemat" />
+										</div>
+									</div>
+									<div class="row">
+										<div class="col">
+											<label class="form-label" for="anotherField">Trọng Lượng Thân Nối Lớp Lót</label>
+											<input type="text" class="form-control" asp-for="trongluongthannoiloplot" />
+										</div>
+										<div class="col">
+											<label class="form-label" for="mahang">Trọng Lượng Thân Nối Bề Mặt</label>
+											<input type="text" class="form-control" asp-for="trongluongthannoibemat" />
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- Dropdown cho danh mục -->
+							<div class="row mb-3">
+								<label class="col-sm-2 col-form-label" for="category">Danh Mục</label>
+								<div class="col-sm-10">
+									<select asp-for="CategoryId" asp-items="ViewBag.CategoryList" class="form-control">
+										<option value="">-- Chọn Danh Mục --</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+					</div>
+
+					<!-- Nút submit -->
+					<div class="row justify-content-end">
+						<div class="col-sm-12">
+							<button type="submit" value="Create" class="btn btn-primary">Lưu</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

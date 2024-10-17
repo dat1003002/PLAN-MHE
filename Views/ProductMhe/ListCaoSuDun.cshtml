@@ -1,0 +1,107 @@
+@model IEnumerable<AspnetCoreMvcFull.ModelDTO.Product.ProductCSDDTO>
+@{
+	ViewData["Title"] = "Cao Su Đùn 200";
+}
+<div class="nav-align-top">
+	<ul class="nav nav-pills flex-column flex-md-row mb-6">
+		<li class="nav-item"><a class="nav-link active" href="javascript:void(0);"> Máy #200 Cao Su Đùn</a></li>
+		<li class="nav-item"><a class="nav-link" href="ListCaoSuDun250">Máy #250 Cao Su Đùn</a></li>
+	</ul>
+</div>
+<div class="card" style="margin-top: 20px;">
+	<div class="card-header-title d-flex align-items-center justify-content-between">
+		<h5 class="card-header me-2">Tiêu Chuẩn Cao Su Đùn #200</h5>
+	</div>
+	<div class="table-responsive text-nowrap">
+		<table class="table" id="datatable">
+			<thead class="table-light">
+				<tr>
+					<td>Máy</td>
+					<th>Mã Hàng</th>
+					<th>Tên Sản Phẩm</th>
+					<th>Ngày Tạo</th>
+					<th>Hoạt Động</th>
+				</tr>
+			</thead>
+			<tbody class="table-border-bottom-0">
+				@foreach (var product in Model)
+				{
+					<tr>
+						<td>@product.may</td>
+						<td>@product.mahang</td>
+						<td>@product.name</td>
+						<td>@product.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+						<td>
+							<div class="menu gap-2 border-none">
+								<button type="button" class="btn btn-primary" style="margin: 0px; padding:3px; background: #4F99C6; color: white; border: #B74635; border-radius: 4px;" data-bs-toggle="modal" data-bs-target="#modalScrollable" onclick="loadProductCSD(@product.ProductId)">
+									<i class='bx bxs-show'></i>
+								</button>
+								<a asp-controller="ProductCSDCtrollercs" asp-action="EditProductCSD" asp-route-id="@product.ProductId"
+								   style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:2px; font-size:9px; border-radius:5px; text-decoration: none;">
+									<i class='bx bx-edit'></i>
+								</a>
+								<button type="button" onclick="deleteProduct(@product.ProductId)" style="margin: 0px; padding:3px; background: #B74635; color: white; border: #B74635; border-radius: 4px;">
+									<i class="bx bx-trash-alt"></i>
+								</button>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<div class="foter-category" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 16px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); text-align: right; z-index: 1000;">
+	<a asp-controller="ProductCSDCtrollercs" asp-action="CreateProductCSD" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
+		Thêm Mới
+	</a>
+</div>
+<div class="modal fade" id="modalScrollable" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-scrollable d-flex align-items-center justify-content-center" role="document" style="max-width: 100%; width: 100%; height: 100%; margin: 0;">
+		<div class="modal-content" style="height: 100%; border-radius: 0;">
+			<div class="modal-header" style="background: #FF0000; justify-content:center;">
+				<h3 class="modal-title" id="modalScrollableTitle">Bảng Tiêu Chuẩn Công Việc Công Đoạn Đùn Cao Su</h3>
+			</div>
+			<div class="modal-body" id="modalBody" style="overflow-y: auto;">
+			</div>
+			<div class="modal-footer" style="background:#FF0000;">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function deleteProduct(productId) {
+		if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+			$.ajax({
+				url: '/ProductCSDCtrollercs/DeleteProductCSD',
+				type: 'POST',
+				data: { ProductId: productId },
+				success: function (result) {
+					alert("Sản phẩm đã được xóa thành công!");
+					location.reload();
+				},
+				error: function (xhr, status, error) {
+					alert("Có lỗi xảy ra: " + xhr.responseText);
+				}
+			});
+		}
+	}
+	function loadProductCSD(productId) {
+		console.log("Loading product with ID: " + productId);
+		$.ajax({
+			url: '@Url.Action("showProductCSDById", "ProductCSDCtrollercs")',
+			type: 'GET',
+			data: { id: productId },
+			success: function (data) {
+				$('#modalBody').html(data);
+				$('#modalScrollable').modal('show');
+			},
+			error: function () {
+				alert('Có lỗi xảy ra khi tải dữ liệu sản phẩm.');
+			}
+		});
+	}
+</script>
