@@ -50,7 +50,8 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> CreateProductGC()
     {
       var categories = await _productService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filterCreatecategori = categories.Where(c => c.CategoryId == 4).ToList();
+      ViewBag.CategoryList = new SelectList(filterCreatecategori, "CategoryId", "CategoryName");
       return View("~/Views/ProductMhe/CreateProductGC.cshtml");
     }
     [HttpPost]
@@ -105,7 +106,8 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
+      var filterCreatecategori = categories.Where(c => c.CategoryId == 4).ToList();
+      ViewBag.CategoryList = new SelectList(filterCreatecategori, "CategoryId", "CategoryName", product.CategoryId);
       return View("~/Views/ProductMhe/EditProductGCMHE.cshtml", product);
     }
     [HttpPost]

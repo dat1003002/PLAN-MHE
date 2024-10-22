@@ -42,7 +42,7 @@ namespace AspnetCoreMvcFull.Repository
     }
     public async Task DeleteProductAsync(int ProductId)
     {
-     var product = await _productCSCTLRepository.Products.FindAsync (ProductId);
+     var product = await _productCSCTLRepository.Products.FindAsync(ProductId);
       if(product != null)
       {
         _productCSCTLRepository.Products.Remove(product);
@@ -85,8 +85,7 @@ namespace AspnetCoreMvcFull.Repository
           image = p.image,
           CategoryId = p.CategoryId
         }).ToListAsync();
-   return products;
-      
+        return products; 
     }
     public Task<IQueryable<ProductCSCTLDTO>> SearchProductsByNameAsync(string name, int categoryId)
     {

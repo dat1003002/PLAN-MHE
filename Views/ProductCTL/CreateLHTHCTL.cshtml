@@ -1,7 +1,7 @@
-@model AspnetCoreMvcFull.ModelDTO.Product.ProductGCMHEDTO
+@model AspnetCoreMvcFull.ModelDTO.Product.LuuHoaCTLDTO
 
 @{
-	ViewData["Title"] = "Thêm Công Việc Gang Cầu MHE";
+	ViewData["Title"] = "Thêm Công Việc CTL";
 }
 
 <div class="container">
@@ -12,12 +12,12 @@
 					<h5 class="mb-0">Tạo Mới Tiêu Chuẩn Công Việc</h5>
 				</div>
 				<div class="card-body">
-					<form asp-action="CreateProductGC" method="post" enctype="multipart/form-data">
+					<form asp-action="CreateLHTHCTL" method="post" enctype="multipart/form-data">
 						@Html.AntiForgeryToken()
 						<div class="row mb-3">
 							<label class="col-sm-4 col-form-label" for="name">Tên Tiêu Chuẩn</label>
 							<div class="col-sm-8">
-								<input type="text" asp-for="name" class="form-control" placeholder="Tên Quy Cách" required />
+								<input type="text" asp-for="name" class="form-control" placeholder="Tên Quy Cách" />
 								<span asp-validation-for="name" class="text-danger"></span>
 							</div>
 						</div>
@@ -25,13 +25,13 @@
 							<label class="col-sm-4 col-form-label" for="imageUpload">Ảnh Tiêu Chuẩn</label>
 							<div class="col-sm-8">
 								<input type="file" asp-for="imageFile" class="form-control" id="imageUpload" accept="image/*" />
-								<span asp-validation-for="imageFile" class="text-danger"></span>
+								<span asp-validation-for="image" class="text-danger"></span>
 							</div>
 						</div>
 						<div class="row mb-3">
 							<label class="col-sm-4 col-form-label" for="category">Danh Mục</label>
 							<div class="col-sm-8">
-								<select asp-for="CategoryId" asp-items="ViewBag.CategoryList" class="form-control" required>
+								<select asp-for="CategoryId" asp-items="ViewBag.CategoryList" class="form-control">
 									<option value="">Chọn danh mục</option>
 								</select>
 								<span asp-validation-for="CategoryId" class="text-danger"></span>

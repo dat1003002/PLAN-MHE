@@ -9,7 +9,6 @@ namespace AspnetCoreMvcFull.Models
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? UpdatedAt { get; set; }
     public DateTime LastUpdated => UpdatedAt ?? CreatedAt;
-
     // Thuộc tính điều hướng một-nhiều
     public ICollection<Product> Products { get; set; } = new List<Product>();
   }

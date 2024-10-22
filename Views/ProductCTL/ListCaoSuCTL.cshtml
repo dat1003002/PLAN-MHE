@@ -84,24 +84,23 @@
 	</div>
 </div>
 <script>
-			function deleteProductCSCTL(productId) {
-			if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-				$.ajax({
+	function deleteProductCSCTL(productId) {
+		if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+			$.ajax({
 				url: '/CaoSuCTLCotroller/DeleteProductCSCTL',
-					type: 'POST',
-					data: { ProductId: productId },
-					success: function(result) {
-						alert("Sản phẩm đã được xóa thành công!");
-						location.reload();
-					},
-					error: function(xhr, status, error) {
-						alert("Có lỗi xảy ra: " + xhr.responseText);
-					}
-				});
-			}
+				type: 'POST',
+				data: { ProductId: productId },
+				success: function (result) {
+					alert("Sản phẩm đã được xóa thành công!");
+					location.reload();
+				},
+				error: function (xhr, status, error) {
+					alert("Có lỗi xảy ra: " + xhr.responseText);
+				}
+			});
 		}
-
-		function loadProductCSCTL(productId) {
+	}
+	function loadProductCSCTL(productId) {
 		$.ajax({
 			url: '@Url.Action("showProductCSCTL", "CaoSuCTLCotroller")',
 			type: 'GET',

@@ -25,7 +25,8 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> CreateProductCSD()
     {
       var categories = await _productCSDService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filtercategories = categories.Where(c => c.CategoryId == 5 || c.CategoryId == 6).ToList();
+      ViewBag.CategoryList = new SelectList(filtercategories, "CategoryId", "CategoryName");
       return View("~/Views/ProductMhe/CreateProductCSD200.cshtml");
     }
 
@@ -52,11 +53,11 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productCSDService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filterEditcategories = categories.Where(c => c.CategoryId == 5 || c.CategoryId == 6).ToList();
+      ViewBag.CategoryList = new SelectList(filterEditcategories, "CategoryId", "CategoryName");
 
       return View("~/Views/ProductMhe/EditProductCSD.cshtml", product);
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProductCSD (ProductCSDDTO productCSDDTO)
@@ -90,7 +91,6 @@ namespace AspnetCoreMvcFull.Controllers
       }
       return PartialView("~/Views/ProductMhe/ProductModalCSD.cshtml", product);
     }
-
     public async Task<IActionResult> ListCaoSuDun250()
     {
       const int categoryId = 6;

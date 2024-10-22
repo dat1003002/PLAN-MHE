@@ -90,7 +90,6 @@ namespace AspnetCoreMvcFull.Controllers
 
       return View("~/Views/ProductCTL/EditProductCSCTL.cshtml", product);
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProductCSCTL(ProductCSCTLDTO product)

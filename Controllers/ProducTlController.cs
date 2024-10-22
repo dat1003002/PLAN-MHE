@@ -17,7 +17,8 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> CreateProductLT()
     {
       var categories = await _productService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filterCreatecategori = categories.Where(c => c.CategoryId == 1).ToList();
+      ViewBag.CategoryList = new SelectList(filterCreatecategori, "CategoryId", "CategoryName");
       return View();
     }
     [HttpPost]
@@ -37,7 +38,8 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
+      var filterCreatecategori = categories.Where(c => c.CategoryId == 1).ToList();
+      ViewBag.CategoryList = new SelectList(filterCreatecategori, "CategoryId", "CategoryName", product.CategoryId);
       return View(product);
     }
     public async Task<IActionResult> DeleteProductLT(int id)
@@ -62,7 +64,8 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
+      var filterEditcategori = categories.Where(c => c.CategoryId == 1).ToList();
+      ViewBag.CategoryList = new SelectList(filterEditcategori, "CategoryId", "CategoryName", product.CategoryId);
 
       return View(product);
     }

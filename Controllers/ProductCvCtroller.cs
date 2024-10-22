@@ -51,7 +51,8 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> CreateProductCV()
     {
       var categories = await _productCvService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filtercategori = categories.Where(c => c.CategoryId == 2).ToList();
+      ViewBag.CategoryList = new SelectList(filtercategori, "CategoryId", "CategoryName");
       return View("~/Views/ProductMhe/CreateProductCV.cshtml");
     }
     [HttpPost]
@@ -94,9 +95,9 @@ namespace AspnetCoreMvcFull.Controllers
     {
         return NotFound();
     }
-
     var categories = await _productCvService.GetCategories();
-    ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName", product.CategoryId);
+     var filterEditcategori = categories.Where(c => c.CategoryId == 2).ToList();
+      ViewBag.CategoryList = new SelectList(filterEditcategori, "CategoryId", "CategoryName", product.CategoryId);
     return View("~/Views/ProductMhe/EditProductCV.cshtml", product);
 }
     [HttpPost]

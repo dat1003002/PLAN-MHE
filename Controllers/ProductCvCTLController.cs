@@ -72,7 +72,8 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productCvCTLService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filtercategories = categories.Where(c => c.CategoryId == 3).ToList();
+      ViewBag.CategoryList = new SelectList(filtercategories, "CategoryId", "CategoryName");
       return View(product);
     }
     public async Task<IActionResult> EditProductCTL(int id)
@@ -84,7 +85,8 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productCvCTLService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filEditcategories = categories.Where(c => c.CategoryId == 3).ToList();
+      ViewBag.CategoryList = new SelectList(filEditcategories, "CategoryId", "CategoryName");
       return View(product);
     }
     [HttpPost]
@@ -120,7 +122,8 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productCvCTLService.GetCategories();
-      ViewBag.CategoryList = new SelectList(categories, "CategoryId", "CategoryName");
+      var filEditcategories = categories.Where(c => c.CategoryId == 3).ToList();
+      ViewBag.CategoryList = new SelectList(filEditcategories, "CategoryId", "CategoryName");
       return View(product);
     }
     public async Task<IActionResult> ShowProductCvCTLById(int id)
