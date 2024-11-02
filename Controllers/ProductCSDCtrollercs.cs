@@ -98,6 +98,5 @@ namespace AspnetCoreMvcFull.Controllers
        IEnumerable<ProductCSDDTO> products = await _productCSDService.GetProducts(categoryId);
       return View("~/Views/ProductMhe/ListCaoSuDun250.cshtml", products);
     }
-
   }
 }

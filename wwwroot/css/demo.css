@@ -70,6 +70,18 @@
   align-items: center;
   justify-content: center;
 }
+.badge-overlay {
+  position: absolute;
+  top: -0.4rem; /* Điều chỉnh vị trí trên */
+  right: -0.4rem; /* Điều chỉnh vị trí trái */
+  background-color: black; /* Màu nền */
+  color: white; /* Màu chữ */
+  padding: 0.15rem 0.3rem; /* Giảm padding */
+  border-radius: 0; /* Giảm độ cong của góc */
+  /*font-size: 0.85rem;*/ /* Giảm kích thước font */
+  font-family: ui-rounded;
+  z-index: 1; /* Đảm bảo lớp này nằm trên các phần tử khác */
+}
 
 .image-container:hover .button-container {
   display: flex; 

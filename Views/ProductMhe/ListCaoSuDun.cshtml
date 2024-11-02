@@ -29,7 +29,7 @@
 					<tr>
 						<td>@product.may</td>
 						<td>@product.mahang</td>
-						<td>@product.name</td>
+						<td style="cursor: pointer" data-bs-toggle="modal" data-bs-target="#modalScrollable" onclick="loadProductCSD(@product.ProductId)">@product.name</td>
 						<td>@product.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
 						<td>
 							<div class="menu gap-2 border-none">
