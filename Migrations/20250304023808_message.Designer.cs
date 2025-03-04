@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241007101652_message")]
+    [Migration("20250304023808_message")]
     partial class message
     {
         /// <inheritdoc />
@@ -170,6 +170,12 @@ namespace AspnetCoreMvcFull.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("tocdomaydun")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("trongluongdaukibemat")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("trongluongdaukiloplot")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("trongluongthanchinhbemat")

@@ -24,6 +24,8 @@ namespace AspnetCoreMvcFull.ModelDTO.Product
     public string? trongluongthanchinhbemat { get; set; }
     public string? trongluongthannoiloplot { get; set; }
     public string? trongluongthannoibemat { get; set; }
+    public string? trongluongdaukibemat { get; set; }
+    public string? trongluongdaukiloplot { get; set; }
     public DateTime? CreatedAt { get; set; } = DateTime.Now;
     public DateTime? UpdatedAt { get; set; }
     public int CategoryId { get; set; }

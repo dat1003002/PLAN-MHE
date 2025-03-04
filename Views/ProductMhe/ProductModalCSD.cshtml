@@ -47,10 +47,13 @@
 		<thead>
 			<tr style="background:#E7E6E6; text-align: center;">
 				<th colSpan="2" style="border: 1px solid black; width:20%; color: black; font-weight:700;">Khổ Tiêu Chuẩn <br />(±5mm) </th>
-				<th colSpan="4" style="border: 1px solid black; width:40%; color: black; font-weight:700;">Chiều Dài Tiêu Chuẩn <br />(±10 mm)</th>
-				<th colSpan="4" style="border: 1px solid black; width:40%; color: black; font-weight:700;">Trọng Lượng Tiêu Chuẩn <br>(+0,-15% kg)</th>
+				<th colSpan="2" style="border: 1px solid black; width:20%; color: black; font-weight:700;">Trọng Lượng đầu kì <br />(kg) </th>
+				<th colSpan="4" style="border: 1px solid black; width:30%; color: black; font-weight:700;">Chiều Dài Tiêu Chuẩn <br />(±10 mm)</th>
+				<th colSpan="4" style="border: 1px solid black; width:30%; color: black; font-weight:700;">Trọng Lượng Tiêu Chuẩn <br>(+0,-15% kg)</th>
 			</tr>
 			<tr style="background:#E7E6E6; text-align: center;">
+				<th rowspan="2" style="border: 1px solid black; color: black; font-weight:700; vertical-align: middle;">Lớp Lót</th>
+				<th rowspan="2" style="border: 1px solid black; color: black; font-weight:700; vertical-align: middle;">Bề Mặt</th>
 				<th rowspan="2" style="border: 1px solid black; color: black; font-weight:700; vertical-align: middle;">Lớp Lót</th>
 				<th rowspan="2" style="border: 1px solid black; color: black; font-weight:700; vertical-align: middle;">Bề Mặt</th>
 				<th colSpan="2" style="border: 1px solid black; color: black; font-weight:700;">Thân Chính</th>
@@ -74,6 +77,8 @@
 			<tr style="background:white;">
 				<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.khotieuchuanloplot</td>
 				<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.khotieuchuanbemat</td>
+				<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.trongluongdaukiloplot</td>
+					<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.trongluongdaukibemat</td>
 				<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudaithanchinhloplot</td>
 				<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudaithanchinhbemat</td>
 				<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudaithannoiloplot</td>

@@ -169,6 +169,12 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<string>("tocdomaydun")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("trongluongdaukibemat")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("trongluongdaukiloplot")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("trongluongthanchinhbemat")
                         .HasColumnType("nvarchar(max)");
 

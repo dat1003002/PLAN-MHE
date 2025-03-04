@@ -39,6 +39,8 @@ namespace AspnetCoreMvcFull.Repository
         trongluongthanchinhloplot = product.trongluongthanchinhloplot,
         trongluongthannoibemat = product.trongluongthannoibemat,
         trongluongthannoiloplot = product.trongluongthannoiloplot,
+        trongluongdaukibemat = product.trongluongdaukibemat,
+        trongluongdaukiloplot = product.trongluongdaukiloplot,
 
         CategoryId = product.CategoryId
       };
@@ -89,6 +91,8 @@ namespace AspnetCoreMvcFull.Repository
         trongluongthanchinhloplot = productCSD.trongluongthanchinhloplot,
         trongluongthannoibemat = productCSD.trongluongthannoibemat,
         trongluongthannoiloplot = productCSD.trongluongthannoiloplot,
+        trongluongdaukibemat = productCSD.trongluongdaukibemat,
+        trongluongdaukiloplot = productCSD.trongluongdaukiloplot,
         CategoryId = productCSD.CategoryId,
       };
     }
@@ -121,6 +125,8 @@ namespace AspnetCoreMvcFull.Repository
            trongluongthanchinhloplot = p.trongluongthanchinhloplot,
            trongluongthannoibemat = p.trongluongthannoibemat,
            trongluongthannoiloplot = p.trongluongthannoiloplot,
+           trongluongdaukibemat = p.trongluongdaukibemat,
+           trongluongdaukiloplot = p.trongluongdaukiloplot,
 
          });
       return await Task.FromResult(productCSD);
@@ -152,6 +158,8 @@ namespace AspnetCoreMvcFull.Repository
         product.trongluongthanchinhloplot = productCSDDTO.trongluongthanchinhloplot;
         product.trongluongthannoibemat = productCSDDTO.trongluongthannoibemat ;
         product.trongluongthannoiloplot = productCSDDTO.trongluongthannoiloplot;
+        product.trongluongdaukibemat = productCSDDTO.trongluongdaukibemat;
+        product.trongluongdaukiloplot = productCSDDTO.trongluongdaukiloplot;
         product.CategoryId = productCSDDTO.CategoryId;
         await _productCSDRepository.SaveChangesAsync();
       }
