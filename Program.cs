@@ -39,6 +39,14 @@ builder.Services.AddScoped<IGangCauCTLRepository, GangCauCTLRepository>();
 builder.Services.AddScoped<IGangCauCTLService, GangCauCTLService>();
 builder.Services.AddScoped<ILuuHoaCTLRepository, LuuHoaCTLRepository>();
 builder.Services.AddScoped<ILuuHoaCTLSevice, LuuHoaCTLSevice>();
+builder.Services.AddScoped<IXuathangSevice, XuathangSevice>();
+builder.Services.AddScoped<IXuathangkhoRepository, XuathangkhoRepository>();
+builder.Services.AddScoped<IDonghangRepository, DongHangRepository>();
+builder.Services.AddScoped<IDongHangService, DongHangService>();
+builder.Services.AddScoped<IProductLTCTLService, ProductLTCTLService>();
+builder.Services.AddScoped<IProductLTCTLRepository, ProductLTCTLRepository>();
+builder.Services.AddScoped<IQuyCachCSCTLRepository, QuyCachCSCTLRepository>();
+builder.Services.AddScoped<IQuyCachCSCTLService, QuyCachCSCTLService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

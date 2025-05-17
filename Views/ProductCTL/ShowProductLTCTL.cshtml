@@ -1,0 +1,77 @@
+@model AspnetCoreMvcFull.ModelDTO.Product.LoiThepCTLDTO
+
+<!-- Table 1 (Đã chỉnh sửa width và căn giữa) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; padding:15px; text-align:center; margin: 0 auto;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:25%; color: black; font-weight:700;">Mã Sản Phẩm</th>
+			<th style="border: 1px solid black; width:75%; color: black; font-weight:700;">Sản Phẩm</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr style="background:white;">
+			<td style="border: 1px solid black; color:red; font-weight:700; font-size:30px;">@Model.mahangctl</td>
+			<td style="border: 1px solid black; color:red ; font-weight:700; font-size:30px;">@Model.name</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Table 3 (Giữ nguyên) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Tốc Độ Quấn<br />(rpm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Chiều Dài Lõi Thép<br />(mm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Số Link</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Số Sợi Lõi Thép <br />(ea)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr style="background:white;">
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.tocdoquan</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudailoithep</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.solink</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.sosoiloithep</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Table 4 (Giữ nguyên) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Khổ Lõi Thép<br />(mm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Độ Dày Cao Su Kết Dính 3T<br />(mm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Khổ Cao Su Kết Dính 3T<br />(mm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Độ Dày Cao Su Bố<br />(mm)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr style="background:white;">
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.kholoithep</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.dodaycaosuketdinh3t</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.khocaosuketdinh3t</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.dodaycaosubo</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Table 5 (Giữ nguyên) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Khổ Cao Su Bố<br />(mm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Trọng Lượng Lõi Thép Spinning<br />(kg)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Khoảng Cách 2 Đầu Mối Nối Lõi Thép<br />(mm)</th>
+			<th style="border: 1px solid black; width:20%; color: black; font-weight:700;">Kích Thước Của Cao Su Dán Mối Nối<br />(mm)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr style="background:white;">
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.khocaosubo</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.trongluongloithepspinning</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.khoangcach2daumoinoiloithep</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.kichthuoccuacaosudanmoinoi</td>
+		</tr>
+	</tbody>
+</table>

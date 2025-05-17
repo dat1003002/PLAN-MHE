@@ -4,26 +4,41 @@
 @using X.PagedList.Mvc.Core
 @using X.PagedList
 @model X.PagedList.IPagedList<AspnetCoreMvcFull.ModelDTO.Product.ProductCSCTLDTO>
-<div class="d-flex justify-content-between">
-	<a asp-controller="CaoSuCTLCotroller" asp-action="CreateProductCSCTL" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
-		Thêm Mới
-	</a>
-	<form asp-controller="CaoSuCTLCotroller" asp-action="SearchCS" method="post" style="display: flex; align-items: center; margin-right: 20px;">
-		<div style="display: inline-flex; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
-			<input type="hidden" name="page" value="@Model.PageNumber" />
+<div class="d-flex justify-content-between align-items-center">
+	<div class="nav-align-top">
+		<ul class="nav nav-pills flex-column flex-md-row mb-6">
+			<li class="nav-item">
+				<a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ListCaoSuCTL" ? "active" : "")"
+				   asp-controller="CaoSuCTLCotroller" asp-action="ListCaoSuCTL">Bảng Hướng Dẫn Công Việc</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ListQuyCachCSDCTL" ? "active" : "")"
+				   asp-controller="QuyCachCaoSuCTL" asp-action="ListQuyCachCSDCTL">Tiêu chuẩn đùn Cao Su</a>
+			</li>
+		</ul>
+	</div>
+	<div class="d-flex ">
+		<form asp-controller="CaoSuCTLCotroller" asp-action="SearchCS" method="post" style="display: flex; align-items: center; margin-right: 20px;">
+			<div style="display: inline-flex; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
+				<input type="hidden" name="page" value="@Model.PageNumber" />
 
-			<input type="text"
-				   name="name"
-				   placeholder="Nhập tên sản phẩm để tìm kiếm"
-				   style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;"
-				   required
-				   value="@ViewData["SearchTerm"]" />
-			<button type="submit"
-					style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
-				Tìm kiếm
-			</button>
-		</div>
-	</form>
+				<input type="text"
+					   name="name"
+					   placeholder="Nhập tên sản phẩm để tìm kiếm"
+					   style="border: none; padding: 5px 8px; font-size: 14px; width: 250px; height: 30px; outline: none;"
+					   required
+					   value="@ViewData["SearchTerm"]" />
+				<button type="submit"
+						style="padding: 5px 12px; background-color: #428BCA; color: white; border: none; cursor: pointer; font-size: 14px; height: 30px; outline: none;">
+					Tìm kiếm
+				</button>
+			</div>
+		</form>
+		<a asp-controller="CaoSuCTLCotroller" asp-action="CreateProductCSCTL"
+		   style="background: #428BCA; border: #428BCA solid 1px; color: white; padding: 5px 12px; font-size: 14px; text-decoration: none; height: 30px; display: inline-block; line-height: 18px;">
+			Thêm Mới
+		</a>
+	</div>
 </div>
 <div class="container mt-4">
 	<div class="row">

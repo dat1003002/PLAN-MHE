@@ -1,0 +1,234 @@
+@model AspnetCoreMvcFull.ModelDTO.Product.QuyCachCaoSuCTLDTO
+
+@{
+	ViewData["Title"] = "Chỉnh Sửa Quy Cách Cao Su Đùn";
+}
+
+<div class="row">
+	<div class="col-xxl">
+		<div class="card mb-6">
+			<!-- Tiêu đề thẻ -->
+			<div class="card-header d-flex align-items-center justify-content-between">
+				<h5 class="mb-0">Chỉnh Sửa Quy Cách Cao Su Đùn</h5>
+			</div>
+
+			<!-- Nội dung biểu mẫu -->
+			<div class="card-body">
+				<form asp-action="EditProduct" method="post">
+					<input type="hidden" asp-for="ProductId" />
+					@Html.AntiForgeryToken()
+
+					<div class="row">
+						<!-- Cột bên trái -->
+						<div class="col-md-6">
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="mahangctl">Mã Sản Phẩm</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="mahangctl" placeholder="Mã Sản Phẩm" />
+									<span asp-validation-for="mahangctl" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="name">Tên Sản Phẩm</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="name" placeholder="Tên Sản Phẩm" />
+									<span asp-validation-for="name" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="loaicaosu">Loại Cao Su</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="loaicaosu" placeholder="Loại Cao Su" />
+									<span asp-validation-for="loaicaosu" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="loaicaosu1">Loại Cao Su 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="loaicaosu1" placeholder="Loại Cao Su 1" />
+									<span asp-validation-for="loaicaosu1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="loaicaosu2">Loại Cao Su 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="loaicaosu2" placeholder="Loại Cao Su 2" />
+									<span asp-validation-for="loaicaosu2" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="loaikhuondun">Loại Khuôn Đùn</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="loaikhuondun" placeholder="Loại Khuôn Đùn" />
+									<span asp-validation-for="loaikhuondun" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="loaikhuondun1">Loại Khuôn Đùn 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="loaikhuondun1" placeholder="Loại Khuôn Đùn 1" />
+									<span asp-validation-for="loaikhuondun1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="loaikhuondun2">Loại Khuôn Đùn 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="loaikhuondun2" placeholder="Loại Khuôn Đùn 2" />
+									<span asp-validation-for="loaikhuondun2" class="text-danger"></span>
+								</div>
+							</div>
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="tocdomotor">Tốc Độ Motor</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="tocdomotor" placeholder="Tốc Độ Motor" />
+									<span asp-validation-for="tocdomotor" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="tocdomotor1">Tốc Độ Motor 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="tocdomotor1" placeholder="Tốc Độ Motor 1" />
+									<span asp-validation-for="tocdomotor1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="tocdomotor2">Tốc Độ Motor 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="tocdomotor2" placeholder="Tốc Độ Motor 2" />
+									<span asp-validation-for="tocdomotor2" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="chieudai">Chiều Dài</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="chieudai" placeholder="Chiều Dài" />
+									<span asp-validation-for="chieudai" class="text-danger"></span>
+								</div>
+							</div>
+
+						</div>
+
+						<!-- Cột bên phải -->
+						<div class="col-md-6">
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="chieudai1">Chiều Dài 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="chieudai1" placeholder="Chiều Dài 1" />
+									<span asp-validation-for="chieudai1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="chieudai2">Chiều Dài 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="chieudai2" placeholder="Chiều Dài 2" />
+									<span asp-validation-for="chieudai2" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="kho">Khổ</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="kho" placeholder="Khổ" />
+									<span asp-validation-for="kho" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="kho1">Khổ 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="kho1" placeholder="Khổ 1" />
+									<span asp-validation-for="kho1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="kho2">Khổ 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="kho2" placeholder="Khổ 2" />
+									<span asp-validation-for="kho2" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="doday">Độ Dày</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="doday" placeholder="Độ Dày" />
+									<span asp-validation-for="doday" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="doday1">Độ Dày 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="doday1" placeholder="Độ Dày 1" />
+									<span asp-validation-for="doday1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="doday2">Độ Dày 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="doday2" placeholder="Độ Dày 2" />
+									<span asp-validation-for="doday2" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="trongluong">Trọng Lượng</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="trongluong" placeholder="Trọng Lượng" />
+									<span asp-validation-for="trongluong" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="trongluong1">Trọng Lượng 1</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="trongluong1" placeholder="Trọng Lượng 1" />
+									<span asp-validation-for="trongluong1" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="trongluong2">Trọng Lượng 2</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="trongluong2" placeholder="Trọng Lượng 2" />
+									<span asp-validation-for="trongluong2" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="CategoryId">Danh Mục</label>
+								<div class="col-sm-8">
+									<select class="form-control" asp-for="CategoryId" asp-items="ViewBag.CategoryList">
+										<option value="">Chọn danh mục</option>
+									</select>
+									<span asp-validation-for="CategoryId" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="row justify-content-end">
+						<div class="col-sm-12 text-end">
+							<button type="submit" class="btn btn-primary">Lưu</button>
+							<a asp-action="ListQuyCachCSDCTL" class="btn btn-secondary">Hủy</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

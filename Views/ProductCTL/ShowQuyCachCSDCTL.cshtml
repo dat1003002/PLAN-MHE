@@ -1,0 +1,95 @@
+@model AspnetCoreMvcFull.ModelDTO.Product.QuyCachCaoSuCTLDTO
+
+<!-- Table 1 (Đã chỉnh sửa width và căn giữa) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; padding:15px; text-align:center; margin: 0 auto;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:25%; color: black; font-weight:700;">Mã Sản Phẩm</th>
+			<th style="border: 1px solid black; width:75%; color: black; font-weight:700;">Sản Phẩm</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr style="background:white;">
+			<td style="border: 1px solid black; color:red; font-weight:700; font-size:30px;">@Model.mahangctl</td>
+			<td style="border: 1px solid black; color:red ; font-weight:700; font-size:30px;">@Model.name</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Table 3 (Giữ nguyên) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Loại Cao Su</th>
+			<th style="border: 1px solid black; width:22%; color: black; font-weight:700;">Loại Khuôn Đùn</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Tốc Độ Motor<br />(rpm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Chiều Dài<br />±10(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Khổ<br />±5(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Độ Dày<br />±1(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Trọng Lượng<br />±1(kg)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr style="background:white;">
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.loaicaosu</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.loaikhuondun</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.tocdomotor</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudai</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.kho</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.doday</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.trongluong</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Table 4 (Giữ nguyên) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Loại Cao Su</th>
+			<th style="border: 1px solid black; width:22%; color: black; font-weight:700;">Loại Khuôn Đùn</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Tốc Độ Motor<br />(rpm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Chiều Dài<br />±10(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Khổ<br />±5(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Độ Dày<br />±3(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Trọng Lượng<br />±1(kg)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.loaicaosu1</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.loaikhuondun1</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.tocdomotor1</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudai1</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.kho1</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.doday1</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.trongluong1</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Table 5 (Giữ nguyên) -->
+<table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+	<thead>
+		<tr style="background:#E7E6E6;">
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Loại Cao Su</th>
+			<th style="border: 1px solid black; width:22%; color: black; font-weight:700;">Loại Khuôn Đùn</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Tốc Độ Motor<br />(rpm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Chiều Dài<br />±10(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Khổ<br />±5(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Độ Dày<br />±3(mm)</th>
+			<th style="border: 1px solid black; width:13%; color: black; font-weight:700;">Trọng Lượng<br />±2(kg)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.loaicaosu2</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.loaikhuondun2</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.tocdomotor2</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.chieudai2</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.kho2</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.doday2</td>
+			<td style="border: 1px solid black; color:#3F51B5; font-weight:700; font-size:21px;">@Model.trongluong2</td>
+		</tr>
+	</tbody>
+</table>

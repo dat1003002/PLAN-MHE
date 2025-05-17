@@ -1,0 +1,78 @@
+@model AspnetCoreMvcFull.ModelDTO.Product.XuathangDTO
+
+@{
+	ViewData["Title"] = "Chỉnh Sửa Sản Phẩm Xuất Hàng";
+}
+
+<div class="container">
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			<div class="card mb-4">
+				<div class="card-header d-flex align-items-center justify-content-between">
+					<h5 class="mb-0">Chỉnh Sửa Sản Phẩm Xuất Hàng</h5>
+					<a asp-action="Listxuathangkho" asp-controller="Xuathangkho" class="btn btn-outline-secondary btn-sm">Quay lại</a>
+				</div>
+				<div class="card-body">
+					<!-- Hiển thị lỗi tổng quát nếu có -->
+					<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+					<form asp-action="EditKhoXH" asp-controller="Xuathangkho" method="post" enctype="multipart/form-data">
+						@Html.AntiForgeryToken()
+						<input type="hidden" asp-for="ProductId" />
+						<input type="hidden" asp-for="image" />
+
+						<div class="row mb-3">
+							<label class="col-sm-4 col-form-label" for="name">Tên Sản Phẩm</label>
+							<div class="col-sm-8">
+								<input type="text" asp-for="name" class="form-control" placeholder="Nhập tên sản phẩm" required />
+								<span asp-validation-for="name" class="text-danger"></span>
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<label class="col-sm-4 col-form-label">Ảnh Hiện Tại</label>
+							<div class="col-sm-8">
+								@if (!string.IsNullOrEmpty(Model.image))
+								{
+									<img src="@Url.Content("~/images/" + Model.image)"
+										 alt="Ảnh sản phẩm"
+										 style="max-width: 200px; max-height: 200px; object-fit: cover; margin-bottom: 10px;" />
+								}
+								else
+								{
+									<p style="color: #6c757d;">Chưa có ảnh</p>
+								}
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<label class="col-sm-4 col-form-label" for="imageFile">Tải Ảnh Mới</label>
+							<div class="col-sm-8">
+								<input type="file" asp-for="imageFile" class="form-control" id="imageFile" accept="image/*" />
+								<small class="form-text text-muted">Chọn ảnh mới nếu muốn thay thế ảnh hiện tại.</small>
+								<span asp-validation-for="imageFile" class="text-danger"></span>
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<label class="col-sm-4 col-form-label" for="CategoryId">Danh Mục</label>
+							<div class="col-sm-8">
+								<select asp-for="CategoryId" asp-items="ViewBag.CategoryList" class="form-control" required>
+									<option value="">Chọn danh mục</option>
+								</select>
+								<span asp-validation-for="CategoryId" class="text-danger"></span>
+							</div>
+						</div>
+
+						<div class="row justify-content-end">
+							<div class="col-sm-12">
+								<button type="submit" class="btn btn-primary">Cập Nhật</button>
+								<a asp-action="Listxuathangkho" asp-controller="Xuathangkho" class="btn btn-outline-secondary">Hủy</a>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

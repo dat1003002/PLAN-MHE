@@ -1,0 +1,139 @@
+@model IEnumerable<AspnetCoreMvcFull.ModelDTO.Product.LoiThepCTLDTO>
+@{
+	ViewData["Title"] = "Danh Sách Tiêu Chuẩn Lõi Thép";
+}
+<div class="nav-align-top mb-3">
+	<ul class="nav nav-pills flex-column flex-md-row mb-6">
+		<li class="nav-item">
+			<a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ListTieuChuanCTL" ? "active" : "")"
+			   asp-controller="ProductCTL" asp-action="ListTieuChuanCTL">Bảng Hướng Dẫn Công Việc</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ListLoiThepCTL" ? "active" : "")"
+			   asp-controller="LoiThepCTL" asp-action="ListLoiThepCTL">Tiêu chuẩn đùn lõi thép</a>
+		</li>
+	</ul>
+</div>
+<div class="card">
+	<div class="card-header-title d-flex align-items-center justify-content-between">
+		<h5 class="card-header me-2">Tiêu Chuẩn Lõi Thép CTL</h5>
+	</div>
+	<div class="table-responsive text-nowrap">
+		<table id="datatable" class="table">
+			<thead class="table-light">
+				<tr>
+					<th>Mã Hàng</th>
+					<th>Tên Sản Phẩm</th>
+					<th>Ngày Tạo</th>
+					<th>Chức Năng</th>
+				</tr>
+			</thead>
+			<tbody class="table-border-bottom-0">
+				@if (!string.IsNullOrEmpty(ViewBag.Message))
+				{
+					<tr>
+						<td colspan="4" style="color: red;">@ViewBag.Message</td>
+					</tr>
+				}
+				else if (Model.Any())
+				{
+					foreach (var product in Model)
+					{
+						<tr id="row-@product.ProductId">
+							<td>@product.mahangctl</td>
+							<td>@product.name</td>
+							<td>@product.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+							<td>
+								<div class="menu gap-2 border-none">
+									<button type="button" class="btn btn-primary" style="margin: 0px; padding:3px; background: #4F99C6; color: white; border: #B74635; border-radius: 4px;" data-bs-toggle="modal" data-bs-target="#modalScrollable" onclick="loadProduct(@product.ProductId)">
+										<i class='bx bxs-show'></i>
+									</button>
+									<a asp-controller="LoiThepCTL" asp-action="EditProductLT" asp-route-id="@product.ProductId"
+									   style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:2px; font-size:9px; border-radius:5px; text-decoration: none;">
+										<i class='bx bx-edit'></i>
+									</a>
+									<button type="button" onclick="deleteProduct(@product.ProductId)" style="margin: 0px; padding:3px; background: #B74635; color: white; border: #B74635; border-radius: 4px;">
+										<i class="bx bx-trash-alt"></i>
+									</button>
+								</div>
+							</td>
+						</tr>
+					}
+				}
+				else
+				{
+					<tr>
+						<td colspan="4">Không có sản phẩm nào.</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+<div class="foter-category" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 16px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); text-align: right; z-index: 1000;">
+	<a asp-controller="LoiThepCTL" asp-action="CreateProductLT" style="background:#428BCA; border:#428BCA solid 1px; color:white; padding:6px; font-size:14px; border-radius:5px; text-decoration: none;">
+		Thêm Mới
+	</a>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalScrollable" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-scrollable d-flex align-items-center justify-content-center" role="document" style="max-width: 100%; width: 100%; height: 100%; margin: 0;">
+		<div class="modal-content" style="height: 100%; border-radius: 0;">
+			<div class="modal-header" style="background: #FF0000; justify-content:center;">
+				<h3 class="modal-title" id="modalScrollableTitle">Quy Trình Tiêu Chuẩn Lõi Thép</h3>
+			</div>
+			<div class="modal-body" id="modalBody" style="overflow-y: auto;">
+			</div>
+			<div class="modal-footer" style="background:#FF0000;">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+	function deleteProduct(productId) {
+		if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+			return;
+		}
+		$.ajax({
+			url: '@Url.Action("DeleteProductLT", "LoiThepCTL")',
+			type: 'POST',
+			data: {
+				id: productId,
+				__RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+			},
+			success: function (response) {
+				if (response.success) {
+					$('#row-' + productId).fadeOut(300, function() {
+						$(this).remove();
+					});
+					alert("Xóa sản phẩm thành công!");
+				} else {
+					alert(response.message || "Có lỗi xảy ra.");
+				}
+			},
+			error: function (xhr, status, error) {
+				alert("Có lỗi xảy ra: " + (xhr.responseJSON?.message || xhr.responseText || error));
+			}
+		});
+	}
+
+	function loadProduct(productId) {
+		$.ajax({
+			url: '@Url.Action("ShowProductLTById", "LoiThepCTL")',
+			type: 'GET',
+			data: { id: productId },
+			success: function (data) {
+				$('#modalBody').html(data);
+				$('#modalScrollable').modal('show');
+			},
+			error: function () {
+				alert('Có lỗi xảy ra khi tải dữ liệu sản phẩm.');
+			}
+		});
+	}
+</script>

@@ -1,0 +1,163 @@
+@model AspnetCoreMvcFull.ModelDTO.Product.LoiThepCTLDTO
+
+@{
+	ViewData["Title"] = "Chỉnh Sửa Lõi Thép CTL";
+}
+
+<div class="row">
+	<div class="col-xxl">
+		<div class="card mb-6">
+			<!-- Tiêu đề thẻ -->
+			<div class="card-header d-flex align-items-center justify-content-between">
+				<h5 class="mb-0">Chỉnh Sửa Quy Cách Lõi Thép</h5>
+			</div>
+
+			<!-- Nội dung biểu mẫu -->
+			<div class="card-body">
+				<form asp-action="EditProductLT" method="post">
+					@Html.AntiForgeryToken()
+					<input type="hidden" asp-for="ProductId" />
+
+					<div class="row">
+						<!-- Cột bên trái -->
+						<div class="col-md-6">
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="mahangctl">Mã Sản Phẩm</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="mahangctl" placeholder="Mã Sản Phẩm" />
+									<span asp-validation-for="mahangctl" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="name">Tên Sản Phẩm</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="name" placeholder="Tên Sản Phẩm" />
+									<span asp-validation-for="name" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="tocdoquan">Tốc Độ Quấn</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="tocdoquan" placeholder="Tốc Độ Quấn" />
+									<span asp-validation-for="tocdoquan" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="chieudailoithep">Chiều Dài Lõi Thép</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="chieudailoithep" placeholder="Chiều Dài Lõi Thép" />
+									<span asp-validation-for="chieudailoithep" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="solink">Số Link</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="solink" placeholder="Số Link" />
+									<span asp-validation-for="solink" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="sosoiloithep">Số Sợi Lõi Thép</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="sosoiloithep" placeholder="Số Sợi Lõi Thép" />
+									<span asp-validation-for="sosoiloithep" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="kholoithep">Khổ Lõi Thép</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="kholoithep" placeholder="Khổ Lõi Thép" />
+									<span asp-validation-for="kholoithep" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="dodaycaosuketdinh3t">Độ Dày Cao Su Kết Dính 3T</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="dodaycaosuketdinh3t" placeholder="Độ Dày Cao Su Kết Dính 3T" />
+									<span asp-validation-for="dodaycaosuketdinh3t" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+
+						<!-- Cột bên phải -->
+						<div class="col-md-6">
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="khocaosuketdinh3t">Khổ Cao Su Kết Dính 3T</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="khocaosuketdinh3t" placeholder="Khổ Cao Su Kết Dính 3T" />
+									<span asp-validation-for="khocaosuketdinh3t" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="dodaycaosubo">Độ Dày Cao Su Bố</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="dodaycaosubo" placeholder="Độ Dày Cao Su Bố" />
+									<span asp-validation-for="dodaycaosubo" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="khocaosubo">Khổ Cao Su Bố</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="khocaosubo" placeholder="Khổ Cao Su Bố" />
+									<span asp-validation-for="khocaosubo" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="trongluongloithepspinning">Trọng Lượng Lõi Thép</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="trongluongloithepspinning" placeholder="Trọng Lượng Lõi Thép" />
+									<span asp-validation-for="trongluongloithepspinning" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="khoangcach2daumoinoiloithep">Khoảng Cách 2 Đầu Mối Nối Lõi Thép</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="khoangcach2daumoinoiloithep" placeholder="Khoảng Cách 2 Đầu Mối Nối Lõi Thép" />
+									<span asp-validation-for="khoangcach2daumoinoiloithep" class="text-danger"></span>
+								</div>
+							</div>
+
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="kichthuoccuacaosudanmoinoi">Kích Thước Cao Su Dán Mối Nối</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" asp-for="kichthuoccuacaosudanmoinoi" placeholder="Kích Thước Cao Su Dán Mối Nối" />
+									<span asp-validation-for="kichthuoccuacaosudanmoinoi" class="text-danger"></span>
+								</div>
+							</div>
+
+							<!-- Dropdown danh mục -->
+							<div class="row mb-3">
+								<label class="col-sm-4 col-form-label" for="CategoryId">Danh Mục</label>
+								<div class="col-sm-8">
+									<select class="form-control" asp-for="CategoryId" asp-items="ViewBag.CategoryList">
+										<option value="">Chọn danh mục</option>
+									</select>
+									<span asp-validation-for="CategoryId" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Nút điều khiển -->
+					<div class="row justify-content-end">
+						<div class="col-sm-12 text-end">
+							<button type="submit" class="btn btn-primary">Lưu</button>
+							<a asp-action="ListLoiThepCTL" class="btn btn-secondary">Hủy</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
