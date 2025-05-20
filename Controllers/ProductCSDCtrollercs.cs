@@ -18,14 +18,14 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> ListCaoSuDun()
     {
       int categoryId = 5;
-
       var products = await _productCSDService.GetProducts(categoryId);
+      ViewBag.CurrentAction = "ListCaoSuDun"; // Thiết lập action hiện tại
       return View("~/Views/ProductMhe/ListCaoSuDun.cshtml", products);
     }
     public async Task<IActionResult> CreateProductCSD()
     {
       var categories = await _productCSDService.GetCategories();
-      var filtercategories = categories.Where(c => c.CategoryId == 5 || c.CategoryId == 6).ToList();
+      var filtercategories = categories.Where(c => c.CategoryId == 5 || c.CategoryId == 6 || c.CategoryId == 14).ToList();
       ViewBag.CategoryList = new SelectList(filtercategories, "CategoryId", "CategoryName");
       return View("~/Views/ProductMhe/CreateProductCSD200.cshtml");
     }
@@ -53,7 +53,7 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var categories = await _productCSDService.GetCategories();
-      var filterEditcategories = categories.Where(c => c.CategoryId == 5 || c.CategoryId == 6).ToList();
+      var filterEditcategories = categories.Where(c => c.CategoryId == 5 || c.CategoryId == 6 || c.CategoryId == 14).ToList();
       ViewBag.CategoryList = new SelectList(filterEditcategories, "CategoryId", "CategoryName");
 
       return View("~/Views/ProductMhe/EditProductCSD.cshtml", product);
@@ -94,9 +94,16 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> ListCaoSuDun250()
     {
       const int categoryId = 6;
-
-       IEnumerable<ProductCSDDTO> products = await _productCSDService.GetProducts(categoryId);
+      IEnumerable<ProductCSDDTO> products = await _productCSDService.GetProducts(categoryId);
+      ViewBag.CurrentAction = "ListCaoSuDun250"; // Thiết lập action hiện tại
       return View("~/Views/ProductMhe/ListCaoSuDun250.cshtml", products);
+    }
+    public async Task<IActionResult> ListCaoSuDun200ctl()
+    {
+      const int categoryId = 14;
+      IEnumerable<ProductCSDDTO> products = await _productCSDService.GetProducts(categoryId);
+      ViewBag.CurrentAction = "ListCaoSuDun200ctl"; // Thiết lập action hiện tại
+      return View("~/Views/ProductMhe/ListCaoSuDun200#3.cshtml", products);
     }
   }
 }
