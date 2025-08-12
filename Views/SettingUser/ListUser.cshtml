@@ -1,0 +1,241 @@
+@using PLANMHE.Models
+@{
+    ViewData["Title"] = "Danh Sách Người Dùng";
+    int index = 1; // Biến đếm bắt đầu từ 1
+}
+<div class="main-box">
+    <div class="header-section">
+        <div class="left-icon"><i class="ace-icon fa fa-star orange"></i></div>
+        <div class="page-title">Danh Sách Người Dùng</div>
+        <div class="right-settings"><i class="fa fa-regular fa-gear"></i></div>
+    </div>
+</div>
+<div class="main-container">
+    <div class="search-area">
+        <input type="text" id="searchUsername" placeholder="Tên đăng nhập">
+        <input type="text" id="searchFullName" placeholder="Họ và tên">
+    </div>
+    <div class="options">
+        <label><input type="radio" name="status" value="all" checked> Tất cả</label>
+        <label class="status-using"><input type="radio" name="status" value="active"> Đang sử dụng</label>
+        <label class="status-deleted"><input type="radio" name="status" value="deleted"> Đã xóa</label>
+    </div>
+</div>
+<table>
+    <thead>
+        <tr class="mvc-grid-headers">
+            <th style="width: 5%;">STT</th>
+            <th style="width: 22%;">Tên Đăng Nhập</th>
+            <th style="width: 23%;">Họ Và Tên</th>
+            <th style="width: 20%;">Email</th>
+            <th style="width: 20%;">Loại Người Dùng</th>
+            <th style="width: 10%;">HOẠT ĐỘNG</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr class="data-row">
+                <td style="width: 5%;">@index</td>
+                <td style="width: 22%;">@user.Username</td>
+                <td style="width: 23%;">@user.FullName</td>
+                <td style="width: 20%;">@user.Email</td>
+                <td style="width: 20%;">@user.UserType?.FullName</td>
+                <td style="width: 10%;">
+                    <button onclick="editUser(@user.Id, '@user.FullName', '@user.Username', '@(user.Phone ?? "")', '@(user.Address ?? "")', '@user.Sex', '@user.Email', @user.UserTypeId)" style="border-radius: 3px; background-color: #428BCA; color: white; border: 1px solid #2E6589; border-bottom-width: 2px; padding: 2px 6px;">
+                        <i class="ace-icon fa fa-edit bigger-120"></i>
+                    </button>
+                    <button onclick="deleteUser(@user.Id)" style="background-color: #C00000; color: white; border-radius: 3px; border: 1px solid #9c2c18; border-bottom-width: 2px; padding: 2px 6px;">
+                        <i class="ace-icon fa fa-trash bigger-120"></i>
+                    </button>
+                </td>
+            </tr>
+            index++;
+        }
+    </tbody>
+</table>
+<div class="foter-category" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 16px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); text-align: right; z-index: 1000;">
+    <button onclick="openModal()" style="background:#428BCA; color: white; border-radius: 3px; border: 1px solid #2E6589; border-bottom-width: 4px; padding: 2px 6px; font-size: 13px; font-family: segoeui;">
+        <i class="ace-icon fa fa-plus"></i> Tạo Mới
+    </button>
+</div>
+<!-- Modal tùy chỉnh -->
+<div id="createModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: white; width: 90%; max-width: 500px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+        <div class="modal-header" style="background-color:#438DB8; padding: 5px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+            <button onclick="closeModal()" style="background: none; color: white; border: 2px solid white; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 15px;">
+            <input type="hidden" id="Id" />
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Họ và tên (*)</label>
+                <input type="text" id="FullName" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Tên đăng nhập (*)</label>
+                <input type="text" id="Username" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Mật khẩu (*)</label>
+                <input type="password" id="Password" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Số điện thoại</label>
+                <input type="tel" id="Phone" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Địa chỉ</label>
+                <input type="text" id="Address" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Giới tính (*)</label>
+                <select id="Sex" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;">
+                    <option value="">Vui lòng chọn</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Email (*)</label>
+                <input type="email" id="Email" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Loại Người Dùng (*)</label>
+                <select id="UserTypeId" style="width: 100%; padding: 3px; border: 1px solid #ddd; border-radius: 3px;">
+                    <option value="">Vui lòng chọn</option>
+                    @foreach (var userType in ViewBag.UserTypes ?? new List<UserType>())
+                    {
+                        <option value="@userType.Id">@userType.FullName</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 5px; border-top: 1px solid #ddd; text-align: right;">
+            <button onclick="saveUser()" style="padding: 2px 10px; font-size: 13px; border: 1px solid #2E6589; border-radius: 3px; background: #428BCA; color: white; cursor: pointer;">
+                <i class="ace-icon fa fa-save"></i>
+                Lưu
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    // Mở modal
+    function openModal() {
+        document.getElementById('createModal').style.display = 'flex';
+        document.getElementById('Id').value = '';
+        document.getElementById('FullName').value = '';
+        document.getElementById('Username').value = '';
+        document.getElementById('Password').value = '';
+        document.getElementById('Phone').value = '';
+        document.getElementById('Address').value = '';
+        document.getElementById('Sex').value = '';
+        document.getElementById('Email').value = '';
+        document.getElementById('UserTypeId').value = '';
+    }
+    // Đóng modal
+    function closeModal() {
+        document.getElementById('createModal').style.display = 'none';
+    }
+    // Chỉnh sửa người dùng
+    function editUser(id, fullName, username, phone, address, sex, email, userTypeId) {
+        document.getElementById('createModal').style.display = 'flex';
+        document.getElementById('Id').value = id;
+        document.getElementById('FullName').value = fullName;
+        document.getElementById('Username').value = username;
+        document.getElementById('Password').value = ''; // Không hiển thị mật khẩu
+        document.getElementById('Phone').value = phone;
+        document.getElementById('Address').value = address;
+        document.getElementById('Sex').value = sex;
+        document.getElementById('Email').value = email;
+        document.getElementById('UserTypeId').value = userTypeId;
+    }
+    // Lưu người dùng
+    function saveUser() {
+        const user = {
+            Id: parseInt(document.getElementById('Id').value) || 0,
+            FullName: document.getElementById('FullName').value,
+            Username: document.getElementById('Username').value,
+            Password: document.getElementById('Password').value,
+            Phone: document.getElementById('Phone').value || null,
+            Address: document.getElementById('Address').value || null,
+            Sex: document.getElementById('Sex').value,
+            Email: document.getElementById('Email').value,
+            UserTypeId: parseInt(document.getElementById('UserTypeId').value)
+        };
+        if (!user.FullName || !user.Username || (!user.Password && user.Id === 0) || !user.Sex || !user.Email || !user.UserTypeId) {
+            alert('Vui lòng điền đầy đủ các trường bắt buộc!');
+            return;
+        }
+        const url = user.Id ? '/SettingUser/UpdateUser' : '/SettingUser/CreateUser';
+        const method = user.Id ? 'PUT' : 'POST';
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || response.statusText); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+                closeModal();
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Lỗi khi lưu người dùng:', error);
+                alert('Lỗi khi lưu người dùng: ' + error.message);
+            });
+    }
+    // Xóa người dùng
+    function deleteUser(id) {
+        if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return;
+        fetch('/SettingUser/DeleteUser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || response.statusText); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Lỗi khi xóa người dùng:', error);
+                alert('Lỗi khi xóa người dùng: ' + error.message);
+            });
+    }
+    // Toggle search area
+    document.querySelector('.right-settings').addEventListener('click', function () {
+        const mainContainer = document.querySelector('.main-container');
+        mainContainer.classList.toggle('hidden');
+    });
+    // Chức năng tìm kiếm động (tự động lọc khi nhập chữ)
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchUsername = document.getElementById('searchUsername');
+        const searchFullName = document.getElementById('searchFullName');
+        const tableRows = document.querySelectorAll('.data-row');
+        function filterTable() {
+            const usernameQuery = searchUsername.value.toLowerCase();
+            const fullNameQuery = searchFullName.value.toLowerCase();
+            tableRows.forEach(row => {
+                const username = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const fullName = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                if (username.includes(usernameQuery) && fullName.includes(fullNameQuery)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        searchUsername.addEventListener('input', filterTable);
+        searchFullName.addEventListener('input', filterTable);
+    });
+</script>

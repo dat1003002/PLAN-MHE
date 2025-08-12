@@ -1,0 +1,164 @@
+@model PLANMHE.Models.Plan
+@{
+    ViewData["Title"] = "Thêm mới kế hoạch";
+    var users = ViewBag.Users as SelectList;
+    var selectedUserIds = ViewData["SelectedUserIds"] as List<int> ?? new List<int>();
+}
+<div class="main-box">
+    <div class="header-section">
+        <div class="left-icon"><i class="fa fa-arrow-left"></i></div>
+        <div class="page-title">Thêm mới kế hoạch</div>
+        <div class="right-settings"><i class="fa fa-gear"></i></div>
+    </div>
+</div>
+<div class="form-wrapper">
+    <div class="input-group">
+        <label for="Name">Tên Kế Hoạch (*)</label>
+        <input type="text" id="Name" placeholder="Nhập tên kế hoạch">
+        <span id="NameError" class="text-danger"></span>
+    </div>
+    <div class="input-group">
+        <label for="Description">Mô Tả</label>
+        <input type="text" id="Description" placeholder="Mô tả">
+        <span id="DescriptionError" class="text-danger"></span>
+    </div>
+    <div class="input-group">
+        <label for="danhsach">Người thực hiện (*)</label>
+        <div class="select-container">
+            <div class="select-box" onclick="toggleDropdown()">
+                @foreach (var id in selectedUserIds)
+                {
+                    var user = users.FirstOrDefault(u => u.Value == id.ToString());
+                    if (user != null)
+                    {
+                        <div class="tag" data-value="@id">
+                            @user.Text <span class="remove-tag" onclick="removeTag('@id')">×</span>
+                        </div>
+                        <input type="hidden" name="SelectedUserIds" value="@id" />
+                    }
+                }
+            </div>
+            <div class="dropdown" id="dropdown">
+                @foreach (var user in users)
+                {
+                    <option value="@user.Value">@user.Text</option>
+                }
+            </div>
+        </div>
+        <span id="SelectedUserIdsError" class="text-danger"></span>
+    </div>
+    <div class="input-group">
+        <label for="date-range">Thời gian (*)</label>
+        <div class="date-container">
+            <input type="date" class="date-field" id="StartDate" step="1">
+            <span class="date-divider">⟷</span>
+            <input type="date" class="date-field" id="EndDate" step="1">
+        </div>
+        <span id="DateError" class="text-danger"></span>
+    </div>
+    <div class="footer-addcategory">
+        <button onclick="savePlan()" class="btn-addcategory">Thêm Mới</button>
+    </div>
+</div>
+<script>
+    function toggleDropdown() {
+        const dropdown = document.getElementById('dropdown');
+        dropdown.classList.toggle('show');
+    }
+
+    function removeTag(value) {
+        const tag = document.querySelector(`.tag[data-value="${value}"]`);
+        if (tag) tag.remove();
+        const hiddenInput = document.querySelector(`input[type="hidden"][name="SelectedUserIds"][value="${value}"]`);
+        if (hiddenInput) hiddenInput.remove();
+        event.stopPropagation();
+    }
+
+    document.querySelectorAll('.dropdown option').forEach(option => {
+        option.addEventListener('click', () => {
+            const value = option.getAttribute('value');
+            const text = option.textContent;
+            const selectBox = document.querySelector('.select-box');
+            if (!selectBox.querySelector(`.tag[data-value="${value}"]`)) {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.setAttribute('data-value', value);
+                tag.innerHTML = `${text} <span class="remove-tag" onclick="removeTag('${value}')">×</span>`;
+                selectBox.appendChild(tag);
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'SelectedUserIds';
+                hiddenInput.value = value;
+                selectBox.appendChild(hiddenInput);
+            }
+            toggleDropdown();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.select-container')) {
+            document.getElementById('dropdown').classList.remove('show');
+        }
+    });
+
+    function savePlan() {
+        // Lấy dữ liệu từ input
+        const name = document.getElementById('Name').value;
+        const description = document.getElementById('Description').value;
+        const startDate = document.getElementById('StartDate').value;
+        const endDate = document.getElementById('EndDate').value;
+        const selectedUserIds = Array.from(document.querySelectorAll('input[name="SelectedUserIds"]')).map(input => parseInt(input.value));
+
+        // Reset thông báo lỗi
+        document.getElementById('NameError').textContent = '';
+        document.getElementById('SelectedUserIdsError').textContent = '';
+        document.getElementById('DateError').textContent = '';
+
+        // Kiểm tra dữ liệu
+        if (!name) {
+            document.getElementById('NameError').textContent = 'Vui lòng nhập tên kế hoạch.';
+            return;
+        }
+        if (!selectedUserIds || selectedUserIds.length === 0) {
+            document.getElementById('SelectedUserIdsError').textContent = 'Vui lòng chọn ít nhất một người thực hiện.';
+            return;
+        }
+        if (!startDate || !endDate) {
+            document.getElementById('DateError').textContent = 'Vui lòng chọn thời gian bắt đầu và kết thúc.';
+            return;
+        }
+
+        // Tạo JSON phẳng
+        const request = {
+            Name: name,
+            Description: description,
+            StartDate: startDate,
+            EndDate: endDate,
+            SelectedUserIds: selectedUserIds
+        };
+
+        // Gửi yêu cầu AJAX
+        fetch('/SettingPlan/CreatePlan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                window.location.href = '/SettingPlan/Listkehoach';
+            }
+        })
+        .catch(error => {
+            alert('Lỗi khi lưu kế hoạch: ' + error.message);
+        });
+    }
+</script>

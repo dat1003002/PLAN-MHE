@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using AspnetCoreMvcFull.Models;
+using PLANMHE.Models;
 
 namespace AspnetCoreMvcFull.Data
 {
@@ -11,18 +10,36 @@ namespace AspnetCoreMvcFull.Data
     {
     }
 
-    public DbSet<Product> Products { get; set; }
-    public DbSet<Category> Categories { get; set; }
+    public DbSet<Plan> Plans { get; set; }
+    public DbSet<User> Users { get; set; }
+    public DbSet<UserPlan> UserPlans { get; set; }
+    public DbSet<UserType> UserTypes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
       base.OnModelCreating(modelBuilder);
 
-      // Cấu hình mối quan hệ một-nhiều từ Category đến Product
-      modelBuilder.Entity<Category>()
-          .HasMany(c => c.Products)
-          .WithOne(p => p.Category)
-          .HasForeignKey(p => p.CategoryId);
+      modelBuilder.Entity<UserPlan>()
+          .HasKey(up => new { up.UserId, up.PlanId });
+
+      modelBuilder.Entity<UserPlan>()
+          .HasOne(up => up.User)
+          .WithMany(u => u.UserPlans)
+          .HasForeignKey(up => up.UserId)
+          .OnDelete(DeleteBehavior.Cascade);
+
+      modelBuilder.Entity<UserPlan>()
+          .HasOne(up => up.Plan)
+          .WithMany(p => p.UserPlans)
+          .HasForeignKey(up => up.PlanId)
+          .OnDelete(DeleteBehavior.Cascade);
+
+      modelBuilder.Entity<User>()
+          .HasOne(u => u.UserType)
+          .WithMany(ut => ut.Users)
+          .HasForeignKey(u => u.UserTypeId)
+          .OnDelete(DeleteBehavior.Restrict) // Ngăn xóa UserType nếu có User liên quan
+          .IsRequired(true); // Bắt buộc UserTypeId
     }
   }
 }
