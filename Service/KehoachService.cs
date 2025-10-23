@@ -14,14 +14,34 @@ namespace PLANMHE.Service
       _repository = repository;
     }
 
-    public async Task AddPlanAsync(Plan plan, IEnumerable<int> userIds)
+    public async Task<int> AddPlanAsync(Plan plan, IEnumerable<int> userIds)
     {
-      await _repository.AddPlanAsync(plan, userIds);
+      return await _repository.AddPlanAsync(plan, userIds);
+    }
+
+    public async Task UpdatePlanAsync(Plan plan, IEnumerable<int> userIds)
+    {
+      await _repository.UpdatePlanAsync(plan, userIds);
+    }
+
+    public async Task<IEnumerable<int>> GetPlanUsersAsync(int planId)
+    {
+      return await _repository.GetPlanUsersAsync(planId);
     }
 
     public async Task<IEnumerable<User>> GetAllUsersAsync()
     {
       return await _repository.GetAllUsersAsync();
+    }
+
+    public async Task<IEnumerable<Plan>> GetAllPlansAsync()
+    {
+      return await _repository.GetAllPlansAsync();
+    }
+
+    public async Task DeletePlanAsync(int planId)
+    {
+      await _repository.DeletePlanAsync(planId);
     }
   }
 }

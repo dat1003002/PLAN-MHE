@@ -1,0 +1,390 @@
+@model PLANMHE.Models.Plan
+@{
+    ViewData["Title"] = "Chi Tiết Kế Hoạch";
+    ViewData["CurrentPage"] = "/THPlan/Detail";
+}
+<div class="main-box">
+    <div class="header-section">
+        <div class="left-icon"><i class="ace-icon fa fa-star orange"></i></div>
+        <div class="page-title">Thực Hiện Kế Hoạch Sản Xuất</div>
+        <div class="right-settings"><i class="fa fa-regular fa-gear"></i></div>
+    </div>
+</div>
+<div class="outer-wrapper">
+    <div class="tabs">
+        <button class="active">Thực Hiện kế hoạch</button>
+    </div>
+    <div class="tab-pane">
+        <div class="main-section" style="background-color: #d9edf7; color:#31708f; border-color: #bce8f1;">
+            <ul style="display:flex; align-items: center;">
+                <li class="fa fa-hand-o-right" style="display:flex; color: #31708f; font-weight: 600;">
+                    <p style="font-size: 15px;font-family: ui-monospace; margin:1px; padding-right: 10px;">
+                        Xác nhận để hoàn thành kế hoạch
+                    </p>
+                </li>
+                <li>
+                    <button type="button" id="confirmPlanBtn" class="import"
+                            style="background:#428BCA; color: white; border-radius: 3px; border: 1px solid #2E6589; border-bottom-width: 4px; padding: 2px 7px; font-size: 12px; font-family: segoeui;">Xác Nhận
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div id="tableContainer" class="table-container">
+            <table id="excelTable" class="table excel-table" style="display: none;">
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+    let tableData = @Html.Raw(ViewBag.TableData ?? "[]");
+    let colWidths = @Html.Raw(ViewBag.ColWidths ?? "[]");
+    let rowHeights = @Html.Raw(ViewBag.RowHeights ?? "[]");
+    let formats = @Html.Raw(ViewBag.Formats ?? "[]");
+    let mergedCells = @Html.Raw(ViewBag.MergedCells ?? "[]");
+    let totalColumnIndex = @ViewBag.TotalColumnIndex;
+    let validColumnIndices = [...new Set(@Html.Raw(ViewBag.ValidColumnIndices ?? "[]"))];
+    let lockedCells = @Html.Raw(ViewBag.LockedCells ?? "[]");
+    let selectedCell = null;
+
+    if (tableData.length > 0) {
+        renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+    }
+
+    function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
+        var $table = $('#excelTable');
+        var $tbody = $table.find('tbody').empty();
+        var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 60), 60));
+        var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+        var skipCells = {};
+
+        $.each(data, function (rowIndex, rowData) {
+            var rowHeightPx = pixelRowHeights[rowIndex] || 30;
+            var $tr = $('<tr>').css({
+                'height': rowHeightPx + 'px',
+                'min-height': rowHeightPx + 'px',
+                'max-height': rowHeightPx + 'px'
+            });
+
+            $.each(rowData, function (colIndex, cellData) {
+                var cellKey = `${rowIndex}-${colIndex}`;
+                if (skipCells[cellKey]) return;
+
+                var $td = $('<td>').text(cellData || '').css({
+                    'width': pixelColWidths[colIndex] + 'px',
+                    'min-width': pixelColWidths[colIndex] + 'px',
+                    'max-width': pixelColWidths[colIndex] + 'px',
+                    'height': rowHeightPx + 'px',
+                    'min-height': rowHeightPx + 'px',
+                    'max-height': rowHeightPx + 'px',
+                    'box-sizing': 'border-box',
+                    'overflow': 'visible'
+                });
+
+                var css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 14px; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: Segoe UI`;
+                var isMerged = false;
+                var hasRowSpan = false;
+
+                $.each(mergedCells, function (i, merge) {
+                    if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+                        isMerged = true;
+                        if (merge.rowSpan > 1) {
+                            hasRowSpan = true;
+                        }
+                    }
+                });
+
+                if (isMerged) {
+                    css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+                    if (!css.includes('text-align')) {
+                        css += ';text-align: center';
+                    }
+                    if (hasRowSpan) {
+                        css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
+                        if (!css.includes('vertical-align')) {
+                            css += ';vertical-align: middle';
+                        }
+                    }
+                }
+
+                if (colIndex === totalColumnIndex) {
+                    css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+                    css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Segoe UI;');
+                    css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
+                    if (!css.includes('text-align')) {
+                        css += ';text-align: center';
+                    }
+                    if (!css.includes('font-family')) {
+                        css += ';font-family: Segoe UI';
+                    }
+                    if (!css.includes('color')) {
+                        css += ';color: #000000';
+                    }
+                    css += ';background-color: #f0f0f0;cursor: not-allowed;';
+                    $td.addClass('disabled-cell');
+                }
+
+                var isLocked = lockedCells.some(cell => cell.row === rowIndex + 1 && cell.col === colIndex + 1);
+                if (isLocked) {
+                    css += ';cursor: not-allowed;';
+                    $td.addClass('disabled-cell');
+                }
+
+                $td.css(css.split(';').reduce((obj, style) => {
+                    const [key, value] = style.split(':').map(s => s.trim());
+                    if (key && value) obj[key] = value;
+                    return obj;
+                }, {}));
+                $td.attr('style', css);
+                $td.data('row', rowIndex).data('col', colIndex);
+
+                $.each(mergedCells, function (i, merge) {
+                    if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+                        if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
+                        if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
+                        var mergedWidth = 0;
+                        for (var c = 0; c < merge.colSpan; c++) {
+                            mergedWidth += pixelColWidths[colIndex + c] || 60;
+                        }
+                        $td.css({
+                            'width': Math.round(mergedWidth) + 'px',
+                            'min-width': Math.round(mergedWidth) + 'px',
+                            'max-width': Math.round(mergedWidth) + 'px',
+                            'height': (rowHeightPx * merge.rowSpan) + 'px',
+                            'min-height': (rowHeightPx * merge.rowSpan) + 'px',
+                            'max-height': (rowHeightPx * merge.rowSpan) + 'px'
+                        });
+                        for (var r = 0; r < merge.rowSpan; r++) {
+                            for (var c = 0; c < merge.colSpan; c++) {
+                                if (r === 0 && c === 0) continue;
+                                skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
+                            }
+                        }
+                    }
+                });
+
+                if (colIndex !== totalColumnIndex && !isLocked) {
+                    $td.on('click', function (e) {
+                        var $this = $(this);
+                        if ($this.find('input').length > 0) return;
+                        if (selectedCell) {
+                            selectedCell.element.removeClass('selected-cell');
+                            selectedCell.element.text(selectedCell.newValue || selectedCell.element.text());
+                        }
+                        selectedCell = { row: rowIndex, col: colIndex, element: $this, newValue: $this.text() };
+                        $this.addClass('selected-cell');
+                        var currentText = $this.text() || '';
+                        var currentBgColor = $this.css('background-color') || '#ffffff';
+                        var cellPadding = parseFloat($this.css('padding') || 5);
+                        var isMerged = $this.attr('rowspan') || $this.attr('colspan');
+                        var hasRowSpan = $this.attr('rowspan') > 1;
+                        var $input = $('<input>').attr('type', 'text').val(currentText).css({
+                            'width': '100%',
+                            'height': '100%',
+                            'box-sizing': 'border-box',
+                            'padding': cellPadding + 'px',
+                            'font-size': $this.css('font-size'),
+                            'font-family': $this.css('font-family'),
+                            'font-weight': $this.css('font-weight'),
+                            'text-align': isMerged ? 'center' : $this.css('text-align'),
+                            'color': '#000000 !important',
+                            'background-color': currentBgColor,
+                            'border': '1px solid #ccc',
+                            'margin': 0,
+                            'display': 'block',
+                            'outline': 'none',
+                            'white-space': 'normal',
+                            'word-wrap': 'break-word'
+                        });
+                        $this.empty().append($input);
+                        $input.focus();
+                        $input.on('input', function () {
+                            var newValue = $(this).val() ? $(this).val().trim() : '';
+                            selectedCell.newValue = newValue;
+                        });
+                        $input.on('blur', function () {
+                            var newValue = $(this).val() ? $(this).val().trim() : '';
+                            if (newValue !== currentText) {
+                                updateCell(rowIndex, colIndex, newValue, totalColumnIndex, validColumnIndices);
+                            }
+                            $this.text(newValue || currentText);
+                            $this.css({
+                                'background-color': currentBgColor,
+                                'color': '#000000',
+                                'text-align': isMerged ? 'center' : $this.css('text-align'),
+                                'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+                                'overflow': 'visible'
+                            });
+                            $input.remove();
+                            $this.addClass('selected-cell');
+                        });
+                        $input.on('keypress', function (e) {
+                            if (e.which === 13) {
+                                $input.blur();
+                            }
+                        });
+                    });
+                }
+                $tr.append($td);
+            });
+            $tbody.append($tr);
+        });
+
+        $table.css({
+            'table-layout': 'fixed',
+            'width': 'auto',
+            'border-collapse': 'collapse'
+        }).show();
+    }
+
+    function updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths) {
+        if (totalColumnIndex === -1 || !validColumnIndices.length) {
+            return;
+        }
+        let sum = 0;
+        validColumnIndices.forEach(validCol => {
+            const cellValue = tableData[row][validCol] || '';
+            const numValue = parseFloat(cellValue.replace(',', '.'));
+            if (!isNaN(numValue)) {
+                sum += numValue;
+            }
+        });
+        tableData[row][totalColumnIndex] = Math.floor(sum) === sum ? sum.toString() : sum.toFixed(2);
+        const $totalCell = $('#excelTable tbody tr').eq(row).find('td').eq(totalColumnIndex + 1);
+        if ($totalCell.length) {
+            $totalCell.text(tableData[row][totalColumnIndex]);
+        }
+        var planId = @Model.Id;
+        var totalCell = {
+            PlanId: planId,
+            RowId: row + 1,
+            ColumnId: totalColumnIndex + 1,
+            Name: tableData[row][totalColumnIndex],
+            BackgroundColor: 'f0f0f0',
+            FontColor: '000000',
+            FontSize: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '14px',
+            FontWeight: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
+            TextAlign: 'center',
+            FontFamily: 'Segoe UI',
+            Rowspan: 1,
+            Colspan: 1,
+            RowHeight: rowHeights[row] || 30,
+            ColWidth: colWidths[totalColumnIndex] || 60,
+            InputSettings: '',
+            IsHidden: false,
+            IsFileUpload: false,
+            IsDeleted: false,
+            IsLocked: true
+        };
+        $.ajax({
+            url: '/THPlan/UpdateCell',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(totalCell),
+            success: function (response) {
+                if (!response.success) {
+                    console.error('Failed to update total cell:', response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error updating total cell:', error);
+            }
+        });
+    }
+
+    function updateCell(row, col, value, totalColumnIndex, validColumnIndices) {
+        if (col === totalColumnIndex) {
+            return;
+        }
+        var safeValue = value === null || value === undefined || value.trim() === '' ? '' : value.trim();
+        tableData[row][col] = safeValue;
+        var planId = @Model.Id;
+        var mergeInfo = mergedCells.find(function(merge) {
+            return merge.startRow === row + 1 && merge.startCol === col + 1;
+        });
+        var planCell = {
+            PlanId: planId,
+            RowId: row + 1,
+            ColumnId: col + 1,
+            Name: safeValue,
+            BackgroundColor: formats[row][`col${col + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'ffffff',
+            FontColor: '000000',
+            FontSize: formats[row][`col${col + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '14px',
+            FontWeight: formats[row][`col${col + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
+            TextAlign: formats[row][`col${col + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || (mergeInfo ? 'center' : 'left'),
+            FontFamily: formats[row][`col${col + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Segoe UI',
+            Rowspan: mergeInfo ? mergeInfo.rowSpan : 1,
+            Colspan: mergeInfo ? mergeInfo.colSpan : 1,
+            RowHeight: rowHeights[row] || 30,
+            ColWidth: colWidths[col] || 60,
+            InputSettings: '',
+            IsHidden: false,
+            IsFileUpload: false,
+            IsDeleted: false,
+            IsLocked: lockedCells.some(cell => cell.row === row + 1 && cell.col === col + 1)
+        };
+        $.ajax({
+            url: '/THPlan/UpdateCell',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(planCell),
+            success: function (response) {
+                if (response.success) {
+                    if (totalColumnIndex !== -1 && validColumnIndices.includes(col)) {
+                        updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths);
+                    }
+                    tableData = response.data.tableData;
+                    formats = response.data.formats;
+                    mergedCells = response.data.mergedCells;
+                    rowHeights = response.data.rowHeights;
+                    colWidths = response.data.colWidths;
+                    totalColumnIndex = response.data.totalColumnIndex;
+                    validColumnIndices = response.data.validColumnIndices;
+                    lockedCells = response.data.lockedCells;
+                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+                } else {
+                    console.error('Failed to update cell:', response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Lỗi khi cập nhật ô:', error);
+            }
+        });
+    }
+
+    $('#confirmPlanBtn').on('click', async function() {
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.prop('disabled', true).html('⏳ Đang xác nhận...');
+        try {
+            const planId = @Model.Id;
+            const response = await $.ajax({
+                url: '/THPlan/ConfirmPlan',
+                type: 'POST',
+                data: { planId: planId }
+            });
+            if (response.success) {
+                $btn.fadeOut(500, function() {
+                    $(this).closest('li').html('<span style="color:#28a745; font-weight:bold; font-size:14px;">✅ HOÀN THÀNH</span>');
+                });
+                $('td').off('click');
+                $('.main-section').html(`
+                    <ul style="display:flex; align-items: center;">
+                        <li style="color: #28a745; font-weight: 600;">
+                            <p style="font-size: 15px; color: #28a745; padding-right: 10px;">
+                                KẾ HOẠCH ĐÃ HOÀN THÀNH ✅
+                            </p>
+                        </li>
+                    </ul>
+                `);
+            }
+        } catch (error) {
+            console.error('Error confirming plan:', error.responseJSON?.message || 'Không thể xác nhận!');
+        } finally {
+            $btn.prop('disabled', false).html(originalText);
+        }
+    });
+});
+</script>

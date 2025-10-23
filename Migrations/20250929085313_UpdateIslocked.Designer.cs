@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace PLANMHE.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250808092754_updatemodel")]
-    partial class updatemodel
+    [Migration("20250929085313_UpdateIslocked")]
+    partial class UpdateIslocked
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,7 +34,6 @@ namespace PLANMHE.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -49,9 +48,97 @@ namespace PLANMHE.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Plans");
+                });
+
+            modelBuilder.Entity("PLANMHE.Models.PlanCell", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BackgroundColor")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<double>("ColWidth")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("Colspan")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FontColor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FontFamily")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FontSize")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FontWeight")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InputSettings")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFileUpload")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("RowHeight")
+                        .HasColumnType("float");
+
+                    b.Property<int>("RowId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Rowspan")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TextAlign")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("PlanCells");
                 });
 
             modelBuilder.Entity("PLANMHE.Models.User", b =>
@@ -76,16 +163,16 @@ namespace PLANMHE.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Sex")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("UserTypeId")
+                    b.Property<int>("UserTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Username")
@@ -129,7 +216,6 @@ namespace PLANMHE.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Note")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -137,11 +223,24 @@ namespace PLANMHE.Migrations
                     b.ToTable("UserTypes");
                 });
 
+            modelBuilder.Entity("PLANMHE.Models.PlanCell", b =>
+                {
+                    b.HasOne("PLANMHE.Models.Plan", "Plan")
+                        .WithMany("PlanCells")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("PLANMHE.Models.User", b =>
                 {
                     b.HasOne("PLANMHE.Models.UserType", "UserType")
                         .WithMany("Users")
-                        .HasForeignKey("UserTypeId");
+                        .HasForeignKey("UserTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("UserType");
                 });
@@ -167,6 +266,8 @@ namespace PLANMHE.Migrations
 
             modelBuilder.Entity("PLANMHE.Models.Plan", b =>
                 {
+                    b.Navigation("PlanCells");
+
                     b.Navigation("UserPlans");
                 });
 

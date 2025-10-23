@@ -19,7 +19,9 @@ namespace PLANMHE.Models
     [Required]
     [DataType(DataType.DateTime)]
     public DateTime EndDate { get; set; }
-    // Thuộc tính điều hướng cho mối quan hệ nhiều-nhiều với User
+    [Required]
+    public string Status { get; set; } = "Active";
     public ICollection<UserPlan> UserPlans { get; set; }
+    public ICollection<PlanCell> PlanCells { get; set; }
   }
 }

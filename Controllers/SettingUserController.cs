@@ -34,7 +34,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error fetching users: {ex.Message}");
         return View(new List<User>());
       }
     }
@@ -53,7 +52,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error fetching User: {ex.Message}");
         return BadRequest(new { message = "Không thể lấy thông tin người dùng: " + ex.Message });
       }
     }
@@ -72,7 +70,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error creating UserType: {ex.Message}");
         return BadRequest(new { message = "Không thể thêm loại người dùng: " + ex.Message });
       }
     }
@@ -91,7 +88,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error updating UserType: {ex.Message}");
         return BadRequest(new { message = "Không thể cập nhật loại người dùng: " + ex.Message });
       }
     }
@@ -115,7 +111,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error deleting UserType: {ex.Message}");
         return BadRequest(new { message = ex.Message });
       }
     }
@@ -138,7 +133,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error creating User: {ex.Message}");
         return BadRequest(new { message = "Không thể thêm người dùng: " + ex.Message });
       }
     }
@@ -152,7 +146,6 @@ namespace PLANMHE.Controllers
             .SelectMany(v => v.Errors)
             .Select(e => e.ErrorMessage)
             .ToList();
-        Console.WriteLine("ModelState Errors: " + string.Join(", ", errors));
         return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
       }
       try
@@ -162,7 +155,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error updating User: {ex.Message}");
         return BadRequest(new { message = "Không thể cập nhật người dùng: " + ex.Message });
       }
     }
@@ -182,7 +174,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error deleting User: {ex.Message}");
         return BadRequest(new { message = ex.Message });
       }
     }
@@ -197,7 +188,6 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error fetching UserTypes: {ex.Message}");
         return BadRequest(new { message = "Không thể lấy danh sách loại người dùng: " + ex.Message });
       }
     }

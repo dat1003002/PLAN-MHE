@@ -1,0 +1,126 @@
+@model List<PLANMHE.Models.Plan>
+@{
+    ViewData["Title"] = "Thực Hiện Kế Hoạch";
+    ViewData["CurrentPage"] = "/THPlan/ListTHPlan";
+}
+
+<div class="main-box">
+    <div class="header-section">
+        <div class="left-icon">
+            <i class="ace-icon fa fa-star orange"></i>
+        </div>
+        <div class="page-title">Danh Sách Kế Hoạch</div>
+        <div class="right-settings">
+            <i class="fa fa-regular fa-gear"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Hiển thị thông báo từ TempData -->
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning" style="margin: 20px; padding: 10px; border-radius: 3px; background-color: #fcf8e3; border-color: #faebcc; color: #8a6d3b;">
+        <strong>Cảnh báo:</strong> @TempData["WarningMessage"]
+    </div>
+}
+
+<div class="main-container">
+    <div class="search-area">
+        <input type="text" id="searchUsername" placeholder="Tên Kế Hoạch" onkeyup="filterPlans()" />
+    </div>
+    <div class="options">
+        <label>
+            <input type="radio" name="status" value="all" checked onclick="filterPlans()" /> Tất cả
+        </label>
+        <label class="status-using">
+            <input type="radio" name="status" value="Active" onclick="filterPlans()" /> Đang thực hiện
+        </label>
+        <label class="status-deleted">
+            <input type="radio" name="status" value="Completed" onclick="filterPlans()" /> Đã Hoàn Thành
+        </label>
+    </div>
+</div>
+<div>
+    <table>
+        <thead>
+            <tr class="mvc-grid-headers">
+                <th style="width: 5%;">STT</th>
+                <th style="width: 40%;">Tên Kế Hoạch</th>
+                <th style="width: 20%;">Ngày Bắt Đầu</th>
+                <th style="width: 20%;">Ngày Kết Thúc</th>
+                <th style="width: 15%;">Trạng Thái</th> 
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                int stt = 1;
+                foreach (var plan in Model)
+                {
+                    <tr class="data-row">
+                        <td style="width: 5%;">@stt</td>
+                        <td style="width: 22%;">
+                            <a href="@Url.Action("Detail", "THPlan", new { id = plan.Id })" style="color: #337ab7; text-decoration: none;">
+                                @plan.Name
+                            </a>
+                        </td>
+                        <td style="width: 23%;">@plan.StartDate.ToString("dd/MM/yyyy")</td>
+                        <td style="width: 20%;">@plan.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td style="width: 10%;">
+                            @{
+                                string statusText = plan.Status == "Active" ? "Đang sử dụng" : (plan.Status == "Completed" ? "Đã Hoàn Thành" : plan.Status);
+                                string statusBgColor = plan.Status == "Active" ? "#5cb85c" : (plan.Status == "Completed" ? "#d9534f" : "#777"); // Xanh cho Active, đỏ cho Completed, xám cho khác
+                            }
+                            <div style="background-color: @statusBgColor; color: white; padding: 2px 10px; border-radius: 3px; text-align: center; font-size: 10px;">
+                                @statusText
+                            </div>
+                        </td>
+                    </tr>
+                    stt++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5">Không có kế hoạch nào.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Tự động ẩn thông báo sau 1 giây
+        @if (TempData["WarningMessage"] != null)
+        {
+            @:setTimeout(function() { $('.alert-warning').fadeOut(500); }, 1000);
+        }
+
+        function filterPlans() {
+            var searchText = $("#searchUsername").val().toLowerCase();
+            var status = $("input[name='status']:checked").val();
+            $("tr.data-row").each(function () {
+                var row = $(this);
+                var planName = row.find("td:eq(1) a").text().toLowerCase();
+                var planStatus = row.find("td:eq(4) div").text().trim(); // Lấy trạng thái từ div mới
+                var showRow = true;
+
+                if (searchText && !planName.includes(searchText)) {
+                    showRow = false;
+                }
+
+                if (status !== "all") {
+                    if (status === "Active" && planStatus !== "Đang sử dụng") {
+                        showRow = false;
+                    } else if (status === "Completed" && planStatus !== "Đã Hoàn Thành") {
+                        showRow = false;
+                    }
+                }
+
+                row.toggle(showRow);
+            });
+        }
+    });
+</script>

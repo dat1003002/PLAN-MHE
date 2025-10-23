@@ -1,15 +1,16 @@
-using AspnetCoreMvcFull.Data;
 using PLANMHE.Models;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace PLANMHE.Repository
 {
   public interface IKehoachRepository
   {
-    Task AddPlanAsync(Plan plan, IEnumerable<int> userIds);
+    Task<int> AddPlanAsync(Plan plan, IEnumerable<int> userIds);
+    Task UpdatePlanAsync(Plan plan, IEnumerable<int> userIds);
+    Task<IEnumerable<int>> GetPlanUsersAsync(int planId);
     Task<IEnumerable<User>> GetAllUsersAsync();
+    Task<IEnumerable<Plan>> GetAllPlansAsync();
+    Task DeletePlanAsync(int planId);
   }
 }
