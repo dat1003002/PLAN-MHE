@@ -6,9 +6,12 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace PLANMHE.Controllers
 {
+  [Authorize] // Yêu cầu đăng nhập
   public class SettingPlanController : Controller
   {
     private readonly IKehoachService _kehoachService;
@@ -46,22 +49,30 @@ namespace PLANMHE.Controllers
         {
           return Json(new { success = false, message = "Thời gian kết thúc không hợp lệ." });
         }
+
+        // Lấy UserId của người dùng hiện tại
+        var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
         string description = request.TryGetProperty("Description", out var descElement) ? descElement.GetString() : null;
         var plan = new Plan
         {
           Name = nameElement.GetString(),
           Description = description,
           StartDate = startDate,
-          EndDate = endDate
+          EndDate = endDate,
+          CreatedBy = currentUserId, // Gán người tạo
+          CreatedDate = DateTime.UtcNow // Gán thời gian tạo
         };
+
         var selectedUserIds = new List<int>();
         foreach (var userIdElement in userIdsElement.EnumerateArray())
         {
-          if (userIdElement.TryGetInt32(out int userId))
+          if (userIdElement.TryGetInt32(out int selectedUserId)) // Sửa: đổi tên biến thành selectedUserId
           {
-            selectedUserIds.Add(userId);
+            selectedUserIds.Add(selectedUserId);
           }
         }
+
         int planId = await _kehoachService.AddPlanAsync(plan, selectedUserIds);
         return Json(new { success = true, message = "Lưu kế hoạch thành công.", redirectUrl = Url.Action("Detail", "DetailSettingPlan", new { id = planId }) });
       }
@@ -70,11 +81,15 @@ namespace PLANMHE.Controllers
         return Json(new { success = false, message = "Lỗi khi lưu kế hoạch: " + ex.Message });
       }
     }
+
     public async Task<IActionResult> Listkehoach(int pageNumber = 1)
     {
       const int pageSize = 10;
+      var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
       var allPlans = await _kehoachService.GetAllPlansAsync();
-      var activePlans = allPlans.Where(p => p.Status == "Active").ToList();
+      var activePlans = allPlans
+          .Where(p => p.Status == "Active" && p.CreatedBy == currentUserId) // Lọc theo người tạo
+          .ToList();
       var plans = activePlans
           .Skip((pageNumber - 1) * pageSize)
           .Take(pageSize)
@@ -89,6 +104,14 @@ namespace PLANMHE.Controllers
     {
       try
       {
+        // Kiểm tra quyền xóa: chỉ cho phép xóa nếu người dùng là người tạo
+        var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var plan = await _kehoachService.GetAllPlansAsync();
+        if (!plan.Any(p => p.Id == planId && p.CreatedBy == currentUserId))
+        {
+          return Json(new { success = false, message = "Bạn không có quyền xóa kế hoạch này." });
+        }
+
         await _kehoachService.DeletePlanAsync(planId);
         return Json(new { success = true, message = "Xóa kế hoạch thành công." });
       }
@@ -137,7 +160,7 @@ namespace PLANMHE.Controllers
     {
       try
       {
-        if (!request.TryGetProperty("id", out var idElement) || !idElement.TryGetInt32(out int id))
+        if (!request.TryGetProperty("id", out var idElement) || !idElement.TryGetInt32(out int planId))
         {
           return Json(new { success = false, message = "ID kế hoạch không hợp lệ." });
         }
@@ -157,25 +180,38 @@ namespace PLANMHE.Controllers
         {
           return Json(new { success = false, message = "Thời gian kết thúc không hợp lệ." });
         }
+
+        // Kiểm tra quyền cập nhật
+        var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var planCheck = await _kehoachService.GetAllPlansAsync();
+        if (!planCheck.Any(p => p.Id == planId && p.CreatedBy == currentUserId))
+        {
+          return Json(new { success = false, message = "Bạn không có quyền cập nhật kế hoạch này." });
+        }
+
         string description = request.TryGetProperty("description", out var descElement) ? descElement.GetString() : null;
-        string status = request.TryGetProperty("status", out var statusElement) ? statusElement.GetString() : "Active"; // Mặc định là Active
+        string status = request.TryGetProperty("status", out var statusElement) ? statusElement.GetString() : "Active";
         var plan = new Plan
         {
-          Id = id,
+          Id = planId,
           Name = nameElement.GetString(),
           Description = description,
           StartDate = startDate,
           EndDate = endDate,
-          Status = status
+          Status = status,
+          CreatedBy = currentUserId, // Giữ nguyên người tạo
+          CreatedDate = planCheck.First(p => p.Id == planId).CreatedDate // Giữ nguyên ngày tạo
         };
+
         var selectedUserIds = new List<int>();
         foreach (var userIdElement in userIdsElement.EnumerateArray())
         {
-          if (userIdElement.TryGetInt32(out int userId))
+          if (userIdElement.TryGetInt32(out int selectedUserId)) // Sửa: đổi tên biến thành selectedUserId
           {
-            selectedUserIds.Add(userId);
+            selectedUserIds.Add(selectedUserId);
           }
         }
+
         await _kehoachService.UpdatePlanAsync(plan, selectedUserIds);
         return Json(new { success = true, message = "Cập nhật kế hoạch thành công." });
       }

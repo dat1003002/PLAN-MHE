@@ -17,8 +17,10 @@ namespace PLANMHE.Repository
 
     public async Task<int> AddPlanAsync(Plan plan, IEnumerable<int> userIds)
     {
+      plan.CreatedDate = DateTime.UtcNow; // Đảm bảo CreatedDate được gán
       _context.Plans.Add(plan);
       await _context.SaveChangesAsync();
+
       foreach (var userId in userIds)
       {
         _context.UserPlans.Add(new UserPlan { PlanId = plan.Id, UserId = userId });
@@ -34,17 +36,23 @@ namespace PLANMHE.Repository
       {
         throw new Exception($"Plan with ID {plan.Id} does not exist.");
       }
+
       existingPlan.Name = plan.Name;
       existingPlan.Description = plan.Description;
       existingPlan.StartDate = plan.StartDate;
       existingPlan.EndDate = plan.EndDate;
-      existingPlan.Status = plan.Status; // Cập nhật trạng thái
+      existingPlan.Status = plan.Status;
+      existingPlan.CreatedBy = plan.CreatedBy; // Giữ nguyên CreatedBy
+      existingPlan.CreatedDate = plan.CreatedDate; // Giữ nguyên CreatedDate
+
       var existingUserPlans = _context.UserPlans.Where(up => up.PlanId == plan.Id);
       _context.UserPlans.RemoveRange(existingUserPlans);
+
       foreach (var userId in userIds)
       {
         _context.UserPlans.Add(new UserPlan { PlanId = plan.Id, UserId = userId });
       }
+
       await _context.SaveChangesAsync();
     }
 
@@ -63,7 +71,7 @@ namespace PLANMHE.Repository
 
     public async Task<IEnumerable<Plan>> GetAllPlansAsync()
     {
-      return await _context.Plans.ToListAsync();
+      return await _context.Plans.Include(p => p.Creator).ToListAsync();
     }
 
     public async Task DeletePlanAsync(int planId)
