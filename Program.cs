@@ -40,6 +40,8 @@ builder.Services.AddScoped<ITHPlanRepository, THPlanRepository>();
 builder.Services.AddScoped<ITHPlanService, THPlanService>();
 builder.Services.AddScoped<IDetailkehoachReposive, DetailkehoachReposive>();
 builder.Services.AddScoped<IDetailkehoachService, DetailkehoachService>();
+builder.Services.AddScoped<ILichSuPlanReponsitory, LichSuPlanReponsitory>();
+builder.Services.AddScoped<ILichSuPlanService, LichSuPlanService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

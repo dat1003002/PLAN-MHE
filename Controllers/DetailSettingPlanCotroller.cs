@@ -148,63 +148,96 @@ namespace PLANMHE.Controllers
     {
       if (file == null || file.Length == 0)
         return Json(new { success = false, message = "Vui lòng chọn file Excel." });
+
       try
       {
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
         using var package = new ExcelPackage(stream);
         var worksheet = package.Workbook.Worksheets[0];
-        int rowCount = worksheet.Dimension?.Rows ?? 0;
+        int originalRowCount = worksheet.Dimension?.Rows ?? 0;
         int colCount = worksheet.Dimension?.Columns ?? 0;
-        if (rowCount == 0 || colCount == 0)
+
+        if (originalRowCount == 0 || colCount == 0)
           return Json(new { success = false, message = "File Excel không chứa dữ liệu." });
-        var tableData = new List<List<object>>();
-        var cellFormats = new List<Dictionary<string, string>>();
+
+        int lastNonEmptyRow = GetLastNonEmptyRow(worksheet, colCount);
+        int rowCount = lastNonEmptyRow > 0 ? lastNonEmptyRow + 1 : 1;
+
+        var tableData = new List<List<object>>(rowCount);
+        var cellFormats = new List<Dictionary<string, string>>(rowCount);
         var mergedCells = new List<Dictionary<string, object>>();
-        var rowHeights = new List<double>();
-        var colWidths = new List<double>();
+        var rowHeights = new List<double>(rowCount);
+        var colWidths = new List<double>(colCount);
         int totalColumnIndex = -1;
         List<int> validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
-        var headerRow = worksheet.Cells[1, 1, 1, colCount];
+
+        var headerRow = worksheet.Cells[1, 1, 1, colCount].Select(c => c.Text?.Trim() ?? "").ToArray();
         bool hasTotalColumn = false;
-        for (int col = 1; col <= colCount; col++)
+        for (int col = 0; col < colCount; col++)
         {
-          var header = worksheet.Cells[1, col].Text?.Trim() ?? "";
-          if (header.ToLower().Contains("tổng cộng") || header.ToLower().Contains("tong cong") || header.ToLower().Contains("total"))
+          var header = headerRow[col];
+          if (header?.ToLower().Contains("tổng cộng") == true || header?.ToLower().Contains("tong cong") == true || header?.ToLower().Contains("total") == true)
           {
             hasTotalColumn = true;
-            totalColumnIndex = col - 1;
+            totalColumnIndex = col;
           }
-          if (validColumns.Contains(header) && !validColumnIndices.Contains(col - 1))
+          if (validColumns.Contains(header) && !validColumnIndices.Contains(col))
           {
-            validColumnIndices.Add(col - 1);
+            validColumnIndices.Add(col);
           }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
         if (!hasTotalColumn)
         {
           colCount++;
           totalColumnIndex = colCount - 1;
         }
-        var planCells = new List<PlanCell>();
+
+        var planCells = new List<PlanCell>(rowCount * colCount);
         for (int row = 1; row <= rowCount; row++)
         {
-          var rowData = new List<object>();
+          var rowData = new List<object>(colCount);
+          var isNewRow = row == rowCount && row == lastNonEmptyRow + 1;
+
           for (int col = 1; col <= colCount; col++)
           {
-            if (col == totalColumnIndex + 1 && row > 1)
+            if (isNewRow)
             {
-              rowData.Add("0");
-            }
-            else
-            {
-              var cellText = worksheet.Cells[row, col].Text?.Trim() ?? "";
-              rowData.Add(cellText);
+              rowData.Add("");
               var cell = new PlanCell
               {
                 PlanId = planId,
-                Name = cellText,
+                Name = "",
+                RowId = row,
+                ColumnId = col,
+                BackgroundColor = col == totalColumnIndex + 1 ? "f0f0f0" : "ffffff",
+                FontColor = "000000",
+                FontSize = "11pt",
+                FontWeight = "normal",
+                TextAlign = col == totalColumnIndex + 1 ? "center" : "left",
+                FontFamily = col == totalColumnIndex + 1 ? "Times New Roman" : "Arial",
+                InputSettings = "",
+                Rowspan = 1,
+                Colspan = 1,
+                IsHidden = false,
+                IsFileUpload = false,
+                RowHeight = 30,
+                ColWidth = 60,
+                CreatedDate = DateTime.UtcNow,
+                IsDeleted = false,
+                IsLocked = false
+              };
+              planCells.Add(cell);
+            }
+            else
+            {
+              var cellValue = worksheet.Cells[row, col].Text?.Trim() ?? "";
+              rowData.Add(cellValue);
+              var cell = new PlanCell
+              {
+                PlanId = planId,
+                Name = cellValue,
                 RowId = row,
                 ColumnId = col,
                 BackgroundColor = GetCellBackgroundColor(worksheet.Cells[row, col]),
@@ -229,6 +262,7 @@ namespace PLANMHE.Controllers
           }
           tableData.Add(rowData);
         }
+
         foreach (var mergedRange in worksheet.MergedCells)
         {
           var range = worksheet.Cells[mergedRange];
@@ -236,7 +270,7 @@ namespace PLANMHE.Controllers
           var startCol = range.Start.Column;
           var endRow = range.End.Row;
           var endCol = range.End.Column;
-          if (startRow <= rowCount && startCol <= colCount)
+          if (startRow <= lastNonEmptyRow && startCol <= colCount && endRow <= lastNonEmptyRow && endCol <= colCount)
           {
             var cell = planCells.FirstOrDefault(c => c.RowId == startRow && c.ColumnId == startCol);
             if (cell != null)
@@ -246,16 +280,16 @@ namespace PLANMHE.Controllers
               cell.TextAlign = "center";
             }
             mergedCells.Add(new Dictionary<string, object>
-                        {
-                            { "startRow", startRow },
-                            { "startCol", startCol },
-                            { "rowSpan", Math.Min(endRow, rowCount) - startRow + 1 },
-                            { "colSpan", Math.Min(endCol, colCount) - startCol + 1 }
-                        });
+                {
+                    { "startRow", startRow },
+                    { "startCol", startCol },
+                    { "rowSpan", endRow - startRow + 1 },
+                    { "colSpan", endCol - startCol + 1 }
+                });
           }
         }
-        await _detailKehoachService.AddPlanCellsAsync(planCells);
-        for (int row = 2; row <= rowCount; row++)
+
+        for (int row = 2; row <= lastNonEmptyRow; row++)
         {
           double total = 0;
           foreach (int colIndex in validColumnIndices)
@@ -268,26 +302,32 @@ namespace PLANMHE.Controllers
           }
           tableData[row - 1][totalColumnIndex] = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##");
         }
+        if (rowCount > lastNonEmptyRow)
+        {
+          tableData[rowCount - 1][totalColumnIndex] = "0";
+        }
+
         for (int row = 1; row <= rowCount; row++)
         {
-          rowHeights.Add(worksheet.Row(row).Height > 0 ? worksheet.Row(row).Height : 30);
+          var isNewRow = row == rowCount && row == lastNonEmptyRow + 1;
+          rowHeights.Add(isNewRow ? 30 : worksheet.Row(row).Height > 0 ? worksheet.Row(row).Height : 30);
           var rowFormats = new Dictionary<string, string>();
           for (int col = 1; col <= colCount; col++)
           {
-            var cell = worksheet.Cells[row, col];
             var format = new Dictionary<string, string>
-                        {
-                            { "backgroundColor", GetCellBackgroundColor(cell) },
-                            { "fontColor", GetCellFontColor(cell) },
-                            { "fontSize", cell.Style.Font.Size.ToString() + "pt" },
-                            { "fontWeight", cell.Style.Font.Bold ? "bold" : "normal" },
-                            { "textAlign", cell.Style.HorizontalAlignment.ToString().ToLower() },
-                            { "fontFamily", cell.Style.Font.Name ?? "Arial" }
-                        };
+                {
+                    { "backgroundColor", isNewRow ? (col == totalColumnIndex + 1 ? "f0f0f0" : "ffffff") : GetCellBackgroundColor(worksheet.Cells[row, col]) },
+                    { "fontColor", isNewRow ? "000000" : GetCellFontColor(worksheet.Cells[row, col]) },
+                    { "fontSize", isNewRow ? "11pt" : worksheet.Cells[row, col].Style.Font.Size.ToString() + "pt" },
+                    { "fontWeight", isNewRow ? "normal" : (worksheet.Cells[row, col].Style.Font.Bold ? "bold" : "normal") },
+                    { "textAlign", isNewRow ? (col == totalColumnIndex + 1 ? "center" : "left") : worksheet.Cells[row, col].Style.HorizontalAlignment.ToString().ToLower() },
+                    { "fontFamily", isNewRow ? (col == totalColumnIndex + 1 ? "Times New Roman" : "Arial") : (worksheet.Cells[row, col].Style.Font.Name ?? "Arial") }
+                };
             rowFormats[$"col{col}"] = ConvertFormatToCss(format);
           }
           cellFormats.Add(rowFormats);
         }
+
         for (int col = 1; col <= colCount; col++)
         {
           var column = worksheet.Column(col);
@@ -295,6 +335,9 @@ namespace PLANMHE.Controllers
           double pixelWidth = Math.Round(excelWidth * 7.5);
           colWidths.Add(Math.Max(pixelWidth, 60));
         }
+
+        await _detailKehoachService.AddPlanCellsAsync(planCells);
+
         return Json(new
         {
           success = true,
@@ -309,10 +352,26 @@ namespace PLANMHE.Controllers
       }
       catch (Exception ex)
       {
-        return Json(new { success = false, message = $"Lỗi: {ex.Message}. Inner Exception: {ex.InnerException?.Message}" });
+        return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
       }
     }
 
+    private int GetLastNonEmptyRow(ExcelWorksheet worksheet, int colCount)
+    {
+      int maxRow = worksheet.Dimension?.End.Row ?? 0;
+      for (int row = maxRow; row >= 1; row--)
+      {
+        for (int col = 1; col <= colCount; col++)
+        {
+          var cellValue = worksheet.Cells[row, col].Value;
+          if (cellValue != null && !string.IsNullOrWhiteSpace(cellValue.ToString()))
+          {
+            return row;
+          }
+        }
+      }
+      return 0;
+    }
     [HttpPost]
     public async Task<IActionResult> AddColumn([FromBody] List<PlanCell> planCells)
     {

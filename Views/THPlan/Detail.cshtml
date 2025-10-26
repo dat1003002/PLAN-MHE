@@ -54,25 +54,30 @@ $(document).ready(function () {
     }
 
     function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
-        var $table = $('#excelTable');
-        var $tbody = $table.find('tbody').empty();
-        var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 60), 60));
-        var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
-        var skipCells = {};
+        const $table = $('#excelTable');
+        const $tbody = $table.find('tbody').empty();
 
-        $.each(data, function (rowIndex, rowData) {
-            var rowHeightPx = pixelRowHeights[rowIndex] || 30;
-            var $tr = $('<tr>').css({
+        // Tiền xử lý kích thước cột và hàng
+        const pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 60), 60));
+        const pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+        const skipCells = {};
+
+        // Sử dụng DocumentFragment để tối ưu DOM
+        const fragment = document.createDocumentFragment();
+
+        data.forEach((rowData, rowIndex) => {
+            const rowHeightPx = pixelRowHeights[rowIndex] || 30;
+            const $tr = $('<tr>').css({
                 'height': rowHeightPx + 'px',
                 'min-height': rowHeightPx + 'px',
                 'max-height': rowHeightPx + 'px'
             });
 
-            $.each(rowData, function (colIndex, cellData) {
-                var cellKey = `${rowIndex}-${colIndex}`;
+            rowData.forEach((cellData, colIndex) => {
+                const cellKey = `${rowIndex}-${colIndex}`;
                 if (skipCells[cellKey]) return;
 
-                var $td = $('<td>').text(cellData || '').css({
+                const $td = $('<td>').text(cellData || '').css({
                     'width': pixelColWidths[colIndex] + 'px',
                     'min-width': pixelColWidths[colIndex] + 'px',
                     'max-width': pixelColWidths[colIndex] + 'px',
@@ -83,50 +88,32 @@ $(document).ready(function () {
                     'overflow': 'visible'
                 });
 
-                var css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 14px; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: Segoe UI`;
-                var isMerged = false;
-                var hasRowSpan = false;
+                let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 14px; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: Segoe UI`;
+                let isMerged = false;
+                let hasRowSpan = false;
 
-                $.each(mergedCells, function (i, merge) {
+                mergedCells.forEach(merge => {
                     if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
                         isMerged = true;
-                        if (merge.rowSpan > 1) {
-                            hasRowSpan = true;
-                        }
+                        if (merge.rowSpan > 1) hasRowSpan = true;
                     }
                 });
 
                 if (isMerged) {
                     css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
-                    if (!css.includes('text-align')) {
-                        css += ';text-align: center';
-                    }
+                    if (!css.includes('text-align')) css += ';text-align: center';
                     if (hasRowSpan) {
                         css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
-                        if (!css.includes('vertical-align')) {
-                            css += ';vertical-align: middle';
-                        }
+                        if (!css.includes('vertical-align')) css += ';vertical-align: middle';
                     }
                 }
 
                 if (colIndex === totalColumnIndex) {
-                    css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
-                    css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Segoe UI;');
-                    css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
-                    if (!css.includes('text-align')) {
-                        css += ';text-align: center';
-                    }
-                    if (!css.includes('font-family')) {
-                        css += ';font-family: Segoe UI';
-                    }
-                    if (!css.includes('color')) {
-                        css += ';color: #000000';
-                    }
                     css += ';background-color: #f0f0f0;cursor: not-allowed;';
                     $td.addClass('disabled-cell');
                 }
 
-                var isLocked = lockedCells.some(cell => cell.row === rowIndex + 1 && cell.col === colIndex + 1);
+                const isLocked = lockedCells.some(cell => cell.row === rowIndex + 1 && cell.col === colIndex + 1);
                 if (isLocked) {
                     css += ';cursor: not-allowed;';
                     $td.addClass('disabled-cell');
@@ -137,15 +124,16 @@ $(document).ready(function () {
                     if (key && value) obj[key] = value;
                     return obj;
                 }, {}));
+
                 $td.attr('style', css);
                 $td.data('row', rowIndex).data('col', colIndex);
 
-                $.each(mergedCells, function (i, merge) {
+                mergedCells.forEach(merge => {
                     if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
                         if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
                         if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
-                        var mergedWidth = 0;
-                        for (var c = 0; c < merge.colSpan; c++) {
+                        let mergedWidth = 0;
+                        for (let c = 0; c < merge.colSpan; c++) {
                             mergedWidth += pixelColWidths[colIndex + c] || 60;
                         }
                         $td.css({
@@ -156,8 +144,8 @@ $(document).ready(function () {
                             'min-height': (rowHeightPx * merge.rowSpan) + 'px',
                             'max-height': (rowHeightPx * merge.rowSpan) + 'px'
                         });
-                        for (var r = 0; r < merge.rowSpan; r++) {
-                            for (var c = 0; c < merge.colSpan; c++) {
+                        for (let r = 0; r < merge.rowSpan; r++) {
+                            for (let c = 0; c < merge.colSpan; c++) {
                                 if (r === 0 && c === 0) continue;
                                 skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
                             }
@@ -167,7 +155,7 @@ $(document).ready(function () {
 
                 if (colIndex !== totalColumnIndex && !isLocked) {
                     $td.on('click', function (e) {
-                        var $this = $(this);
+                        const $this = $(this);
                         if ($this.find('input').length > 0) return;
                         if (selectedCell) {
                             selectedCell.element.removeClass('selected-cell');
@@ -175,12 +163,12 @@ $(document).ready(function () {
                         }
                         selectedCell = { row: rowIndex, col: colIndex, element: $this, newValue: $this.text() };
                         $this.addClass('selected-cell');
-                        var currentText = $this.text() || '';
-                        var currentBgColor = $this.css('background-color') || '#ffffff';
-                        var cellPadding = parseFloat($this.css('padding') || 5);
-                        var isMerged = $this.attr('rowspan') || $this.attr('colspan');
-                        var hasRowSpan = $this.attr('rowspan') > 1;
-                        var $input = $('<input>').attr('type', 'text').val(currentText).css({
+                        const currentText = $this.text() || '';
+                        const currentBgColor = $this.css('background-color') || '#ffffff';
+                        const cellPadding = parseFloat($this.css('padding') || 5);
+                        const isMerged = $this.attr('rowspan') || $this.attr('colspan');
+                        const hasRowSpan = $this.attr('rowspan') > 1;
+                        const $input = $('<input>').attr('type', 'text').val(currentText).css({
                             'width': '100%',
                             'height': '100%',
                             'box-sizing': 'border-box',
@@ -201,11 +189,10 @@ $(document).ready(function () {
                         $this.empty().append($input);
                         $input.focus();
                         $input.on('input', function () {
-                            var newValue = $(this).val() ? $(this).val().trim() : '';
-                            selectedCell.newValue = newValue;
+                            selectedCell.newValue = $(this).val() ? $(this).val().trim() : '';
                         });
                         $input.on('blur', function () {
-                            var newValue = $(this).val() ? $(this).val().trim() : '';
+                            const newValue = $(this).val() ? $(this).val().trim() : '';
                             if (newValue !== currentText) {
                                 updateCell(rowIndex, colIndex, newValue, totalColumnIndex, validColumnIndices);
                             }
@@ -229,9 +216,10 @@ $(document).ready(function () {
                 }
                 $tr.append($td);
             });
-            $tbody.append($tr);
+            fragment.appendChild($tr[0]);
         });
 
+        $tbody.append(fragment);
         $table.css({
             'table-layout': 'fixed',
             'width': 'auto',
@@ -240,24 +228,18 @@ $(document).ready(function () {
     }
 
     function updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths) {
-        if (totalColumnIndex === -1 || !validColumnIndices.length) {
-            return;
-        }
+        if (totalColumnIndex === -1 || !validColumnIndices.length) return;
         let sum = 0;
         validColumnIndices.forEach(validCol => {
             const cellValue = tableData[row][validCol] || '';
             const numValue = parseFloat(cellValue.replace(',', '.'));
-            if (!isNaN(numValue)) {
-                sum += numValue;
-            }
+            if (!isNaN(numValue)) sum += numValue;
         });
         tableData[row][totalColumnIndex] = Math.floor(sum) === sum ? sum.toString() : sum.toFixed(2);
         const $totalCell = $('#excelTable tbody tr').eq(row).find('td').eq(totalColumnIndex + 1);
-        if ($totalCell.length) {
-            $totalCell.text(tableData[row][totalColumnIndex]);
-        }
-        var planId = @Model.Id;
-        var totalCell = {
+        if ($totalCell.length) $totalCell.text(tableData[row][totalColumnIndex]);
+        const planId = @Model.Id;
+        const totalCell = {
             PlanId: planId,
             RowId: row + 1,
             ColumnId: totalColumnIndex + 1,
@@ -284,27 +266,19 @@ $(document).ready(function () {
             contentType: 'application/json',
             data: JSON.stringify(totalCell),
             success: function (response) {
-                if (!response.success) {
-                    console.error('Failed to update total cell:', response.message);
-                }
+                if (!response.success) return;
             },
-            error: function (xhr, status, error) {
-                console.error('Error updating total cell:', error);
-            }
+            error: function () {}
         });
     }
 
     function updateCell(row, col, value, totalColumnIndex, validColumnIndices) {
-        if (col === totalColumnIndex) {
-            return;
-        }
-        var safeValue = value === null || value === undefined || value.trim() === '' ? '' : value.trim();
+        if (col === totalColumnIndex) return;
+        const safeValue = value === null || value === undefined || value.trim() === '' ? '' : value.trim();
         tableData[row][col] = safeValue;
-        var planId = @Model.Id;
-        var mergeInfo = mergedCells.find(function(merge) {
-            return merge.startRow === row + 1 && merge.startCol === col + 1;
-        });
-        var planCell = {
+        const planId = @Model.Id;
+        const mergeInfo = mergedCells.find(merge => merge.startRow === row + 1 && merge.startCol === col + 1);
+        const planCell = {
             PlanId: planId,
             RowId: row + 1,
             ColumnId: col + 1,
@@ -331,26 +305,21 @@ $(document).ready(function () {
             contentType: 'application/json',
             data: JSON.stringify(planCell),
             success: function (response) {
-                if (response.success) {
-                    if (totalColumnIndex !== -1 && validColumnIndices.includes(col)) {
-                        updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths);
-                    }
-                    tableData = response.data.tableData;
-                    formats = response.data.formats;
-                    mergedCells = response.data.mergedCells;
-                    rowHeights = response.data.rowHeights;
-                    colWidths = response.data.colWidths;
-                    totalColumnIndex = response.data.totalColumnIndex;
-                    validColumnIndices = response.data.validColumnIndices;
-                    lockedCells = response.data.lockedCells;
-                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-                } else {
-                    console.error('Failed to update cell:', response.message);
+                if (!response.success) return;
+                if (totalColumnIndex !== -1 && validColumnIndices.includes(col)) {
+                    updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths);
                 }
+                tableData = response.data.tableData;
+                formats = response.data.formats;
+                mergedCells = response.data.mergedCells;
+                rowHeights = response.data.rowHeights;
+                colWidths = response.data.colWidths;
+                totalColumnIndex = response.data.totalColumnIndex;
+                validColumnIndices = response.data.validColumnIndices;
+                lockedCells = response.data.lockedCells;
+                renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
             },
-            error: function (xhr, status, error) {
-                console.error('Lỗi khi cập nhật ô:', error);
-            }
+            error: function () {}
         });
     }
 
@@ -369,7 +338,7 @@ $(document).ready(function () {
                 $btn.fadeOut(500, function() {
                     $(this).closest('li').html('<span style="color:#28a745; font-weight:bold; font-size:14px;">✅ HOÀN THÀNH</span>');
                 });
-                $('td').off('click');
+                $('#excelTable td').off('click').addClass('disabled-cell').css('cursor', 'not-allowed');
                 $('.main-section').html(`
                     <ul style="display:flex; align-items: center;">
                         <li style="color: #28a745; font-weight: 600;">
@@ -379,9 +348,20 @@ $(document).ready(function () {
                         </li>
                     </ul>
                 `);
+                tableData = response.data.tableData;
+                formats = response.data.formats;
+                mergedCells = response.data.mergedCells;
+                rowHeights = response.data.rowHeights;
+                colWidths = response.data.colWidths;
+                totalColumnIndex = response.data.totalColumnIndex;
+                validColumnIndices = response.data.validColumnIndices;
+                lockedCells = response.data.lockedCells;
+                renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+            } else {
+                alert(response.message);
             }
         } catch (error) {
-            console.error('Error confirming plan:', error.responseJSON?.message || 'Không thể xác nhận!');
+            alert('Không thể xác nhận: ' + (error.responseJSON?.message || 'Lỗi không xác định'));
         } finally {
             $btn.prop('disabled', false).html(originalText);
         }
