@@ -17,11 +17,8 @@ namespace PLANMHE.Service
 
     public List<Plan> GetPlansByUserId(int userId, bool isAdmin)
     {
-      if (isAdmin)
-      {
-        return _repository.GetAllPlans();
-      }
-      return _repository.GetPlansByUserId(userId);
+      var plans = isAdmin ? _repository.GetAllPlans() : _repository.GetPlansByUserId(userId);
+      return plans.Where(p => p.Status == "Active").ToList(); // Chỉ lấy kế hoạch Active
     }
 
     public async Task<Plan> GetPlanById(int planId)

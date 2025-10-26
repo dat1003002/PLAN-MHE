@@ -1,0 +1,122 @@
+@model IEnumerable<PLANMHE.Models.Plan>
+<div class="main-box">
+    <div class="header-section">
+        <div class="left-icon"><i class="ace-icon fa fa-star orange"></i></div>
+        <div class="page-title">Lịch Sử Kế Hoạch</div>
+        <div class="right-settings"><i class="fa fa-regular fa-gear"></i></div>
+    </div>
+</div>
+<div class="main-container">
+    <div class="search-area">
+        <input type="text" id="searchUsername" placeholder="Tên Kế Hoạch">
+    </div>
+    <div class="options">
+        <label><input type="radio" name="status" value="all" checked> Tất cả</label>
+        <label class="status-using"><input type="radio" name="status" value="active"> Đang thực hiện</label>
+        <label class="status-deleted"><input type="radio" name="status" value="completed"> Đã Hoàn Thành</label>
+    </div>
+</div>
+<table id="planTable">
+    <thead>
+        <tr class="mvc-grid-headers">
+            <th style="width: 5%;">STT</th>
+            <th style="width: 30%;">Tên Kế Hoạch</th>
+            <th style="width: 15%;">Ngày Bắt Đầu</th>
+            <th style="width: 15%;">Ngày Kết Thúc</th>
+            <th style="width: 15%;">Trạng thái</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            int stt = (ViewBag.CurrentPage - 1) * 10 + 1;
+            foreach (var plan in Model)
+            {
+                <tr class="data-row" data-status="@plan.Status.ToLower()" data-name="@plan.Name.ToLower()">
+                    <td style="width: 5%;">@stt</td>
+                    <td style="width: 30%;">
+                        <a href="@Url.Action("Detail", "HistoryPlan", new { id = plan.Id })">@plan.Name</a>
+                    </td>
+                    <td style="width: 15%;">@plan.StartDate.ToString("dd/MM/yyyy")</td>
+                    <td style="width: 15%;">@plan.EndDate.ToString("dd/MM/yyyy")</td>
+                    <td style="width: 15%;">
+                        @if (plan.Status == "Active")
+                        {
+                            <button class="status-button" style="background-color: #28a745; color: white; border: 1px solid #28a745; padding: 1px 3px; border-radius: 5px; cursor: default; font-size: 10px;">
+                                Đang thực hiện
+                            </button>
+                        }
+                        else if (plan.Status == "Completed")
+                        {
+                            <button class="status-button" style="background-color: #dc3545; color: white; border: 1px solid #c82333; padding: 1px 3px; border-radius: 5px; cursor: default; font-size: 10px;">
+                                Đã Hoàn Thành
+                            </button>
+                        }
+                        else
+                        {
+                            <span>@plan.Status</span>
+                        }
+                    </td>
+                </tr>
+                stt++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5">Không có kế hoạch nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<!-- Phân trang -->
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item @((ViewBag.CurrentPage == 1) ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("ListLichsuKeHoach", new { pageNumber = ViewBag.CurrentPage - 1 })" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("ListLichsuKeHoach", new { pageNumber = i })">@i</a>
+                </li>
+            }
+            <li class="page-item @((ViewBag.CurrentPage == ViewBag.TotalPages) ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("ListLichsuKeHoach", new { pageNumber = ViewBag.CurrentPage + 1 })" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const radioButtons = document.querySelectorAll('input[name="status"]');
+        const searchInput = document.querySelector('#searchUsername');
+        const tableRows = document.querySelectorAll('#planTable .data-row');
+        function filterPlans() {
+            const selectedStatus = document.querySelector('input[name="status"]:checked').value;
+            const searchQuery = searchInput.value.trim().toLowerCase();
+            tableRows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                const rowName = row.getAttribute('data-name');
+                const matchesStatus = selectedStatus === 'all' || rowStatus === selectedStatus;
+                const matchesSearch = searchQuery === '' || rowName.includes(searchQuery);
+                if (matchesStatus && matchesSearch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', filterPlans);
+        });
+        searchInput.addEventListener('input', filterPlans);
+        // Run initial filter to apply default "all" status
+        filterPlans();
+    });
+</script>

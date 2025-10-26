@@ -9,6 +9,7 @@ namespace PLANMHE.Service
   public class DetailkehoachService : IDetailkehoachService
   {
     private readonly IDetailkehoachReposive _repository;
+
     public DetailkehoachService(IDetailkehoachReposive repository)
     {
       _repository = repository;
@@ -34,6 +35,11 @@ namespace PLANMHE.Service
       await _repository.UpdatePlanCellAsync(planCell);
     }
 
+    public async Task UpdatePlanCellsAsync(IEnumerable<PlanCell> planCells)
+    {
+      await _repository.UpdatePlanCellsAsync(planCells);
+    }
+
     public async Task<LockRowsResult> LockRowsAsync(int planId, IEnumerable<int> selectedRows)
     {
       var planCells = (await _repository.GetPlanCellsAsync(planId)).ToList();
@@ -43,19 +49,13 @@ namespace PLANMHE.Service
       {
         throw new Exception("Không có dữ liệu bảng.");
       }
-
-      // Tạo tableData, formats, lockedCells
       var tableData = new List<List<object>>();
       var formats = new List<Dictionary<string, string>>();
       var lockedCells = new List<Dictionary<string, bool>>();
-
-      // Tạo từ điển để tra cứu nhanh PlanCell theo (RowId, ColumnId)
       var cellDictionary = planCells
           .GroupBy(pc => (pc.RowId, pc.ColumnId))
           .Select(g => g.First())
           .ToDictionary(pc => (pc.RowId, pc.ColumnId), pc => pc);
-
-      // Khởi tạo tableData, formats, và lockedCells
       for (int row = 1; row <= maxRow; row++)
       {
         var rowData = new List<object>();
@@ -66,7 +66,7 @@ namespace PLANMHE.Service
           var cellKey = (row, col);
           var cell = cellDictionary.ContainsKey(cellKey) ? cellDictionary[cellKey] : null;
           rowData.Add(cell?.Name?.Trim() ?? "");
-          rowLocked[$"col{col}"] = true; // Mặc định khóa tất cả
+          rowLocked[$"col{col}"] = true;
           rowFormats[$"col{col}"] = cell != null
               ? $"background-color: #{cell.BackgroundColor}; color: #{cell.FontColor}; font-size: {cell.FontSize}; font-weight: {cell.FontWeight}; text-align: {cell.TextAlign}; font-family: {cell.FontFamily}"
               : "background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial";
@@ -75,11 +75,7 @@ namespace PLANMHE.Service
         formats.Add(rowFormats);
         lockedCells.Add(rowLocked);
       }
-
-      // Xác định các dòng kế tiếp cần mở khóa
       var nextRowsToEnable = selectedRows.Where(row => row < maxRow - 1).Select(row => row + 1).ToList();
-
-      // Cập nhật trạng thái khóa/mở khóa
       var updatedCells = new List<PlanCell>();
       for (int row = 1; row <= maxRow; row++)
       {
@@ -109,19 +105,15 @@ namespace PLANMHE.Service
             IsFileUpload = false,
             IsDeleted = false
           };
-          // Logic khóa/mở khóa
-          cell.IsLocked = !isNextRow; // Khóa tất cả trừ dòng kế tiếp của dòng được chọn
+          cell.IsLocked = !isNextRow;
           if (isNextRow)
           {
-            lockedCells[row - 1][$"col{col}"] = false; // Mở khóa dòng kế tiếp
+            lockedCells[row - 1][$"col{col}"] = false;
           }
           updatedCells.Add(cell);
         }
       }
-
-      // Cập nhật tất cả PlanCells vào database
       await _repository.UpdatePlanCellsAsync(updatedCells);
-
       return new LockRowsResult
       {
         TableData = tableData,

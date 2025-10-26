@@ -76,11 +76,14 @@
             <form id="uploadForm" enctype="multipart/form-data" class="mt-3" style="display: flex; align-items: center; gap: 10px;">
                 <input type="hidden" name="planId" value="@Model.Id" />
                 <input type="file" name="file" accept=".xlsx,.xls" />
-                <button type="submit" class="import" style="background-color:#629B58;">
+                <button type="submit" class="import" style="background-color:#1B6AAA;">
                     <i class="fa-solid fa-file-excel" style="padding-right: 5px;"></i>Tạo Form
                 </button>
-                <button type="button" class="lock-row"><i class="ace-icon fa fa-lock" style="padding-right: 5px;"></i>Khóa dòng</button>
-                <button type="button" class="add-row"><i class="fa-solid fa-lock-open" style="padding-right: 5px;"></i>Mở Dòng</button>
+                <button type="button" class="import add-row" style="background-color:#1B6AAA;">
+                    <i class="fa-solid fa-plus" style="padding-right: 5px;"></i>Thêm Dòng
+                </button>
+                <button type="button" style="background-color:#c00000; border:#c00000;" class="lock-row"><i class="ace-icon fa fa-lock" style="padding-right: 5px;"></i>Khóa dòng</button>
+                <button type="button" style="background-color:#0c6f6c; border:#FF9D41;" class="add-row"><i class="fa-solid fa-lock-open" style="padding-right: 5px;"></i>Mở Dòng</button>
             </form>
         </div>
         <div id="tableContainer" class="table-container">
@@ -92,577 +95,605 @@
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$(document).ready(function () {
-    const validColumns = ["Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3"];
-    let tableData = @Html.Raw(ViewBag.TableData ?? "[]");
-    let colWidths = @Html.Raw(ViewBag.ColWidths ?? "[]");
-    let rowHeights = @Html.Raw(ViewBag.RowHeights ?? "[]");
-    let formats = @Html.Raw(ViewBag.Formats ?? "[]");
-    let mergedCells = @Html.Raw(ViewBag.MergedCells ?? "[]");
-    let lockedCells = @Html.Raw(ViewBag.LockedCells ?? "[]");
-    let totalColumnIndex = @ViewBag.TotalColumnIndex;
-    let validColumnIndices = [...new Set(@Html.Raw(ViewBag.ValidColumnIndices ?? "[]"))];
-    let selectedRows = new Set();
-    let selectedCell = null;
-    const machineAssignments = [
-        { row: 1, machineId: 1 }, { row: 2, machineId: 1 }, { row: 3, machineId: 1 }, { row: 4, machineId: 1 },
-        { row: 5, machineId: 1 }, { row: 6, machineId: 1 }, { row: 7, machineId: 1 }, { row: 8, machineId: 1 },
-        { row: 9, machineId: 2 }, { row: 10, machineId: 2 }, { row: 11, machineId: 2 }, { row: 12, machineId: 2 },
-        { row: 13, machineId: 2 }, { row: 14, machineId: 2 }, { row: 15, machineId: 2 },
-        { row: 16, machineId: 3 }, { row: 17, machineId: 3 }, { row: 18, machineId: 3 }, { row: 19, machineId: 3 },
-        { row: 20, machineId: 3 }
-    ];
-    if (tableData.length > 0) {
-        renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-    }
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-    $('#excelTable').on('change', '.row-checkbox', function () {
-        const rowIndex = $(this).data('row');
-        if ($(this).is(':checked')) {
-            selectedRows.add(rowIndex);
-        } else {
-            selectedRows.delete(rowIndex);
-        }
-    });
-    $('.lock-row').on('click', function () {
-        if (selectedRows.size === 0) {
-            alert('Vui lòng chọn ít nhất một dòng để khóa.');
-            return;
-        }
-        var planId = @Model.Id;
-        var selectedRowsArray = Array.from(selectedRows);
-        $.ajax({
-            url: '@Url.Action("LockRows", "DetailSettingPlan")',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ planId: planId, selectedRows: selectedRowsArray }),
-            success: function (response) {
-                if (response.success) {
-                    tableData = response.tableData;
-                    formats = response.formats;
-                    lockedCells = response.lockedCells;
-                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-                    alert('Khóa dòng thành công.');
-                    selectedRows.clear();
-                    $('#excelTable .row-checkbox').prop('checked', false);
-                } else {
-                    alert(response.message);
-                }
-            },
-            error: function () {
-                alert('Đã có lỗi xảy ra khi khóa dòng.');
-            }
-        });
-    });
-    $('.add-row').on('click', function () {
-        if (selectedRows.size === 0) {
-            alert('Vui lòng chọn ít nhất một dòng để mở khóa.');
-            return;
-        }
-        var planId = @Model.Id;
-        var selectedRowsArray = Array.from(selectedRows);
-        var planCellsToUpdate = [];
-        for (let rowIndex of selectedRowsArray) {
-            for (let col = 1; col <= tableData[0].length; col++) {
-                if (lockedCells[rowIndex] && lockedCells[rowIndex][`col${col}`]) {
-                    var mergeInfo = mergedCells.find(merge => merge.startRow === rowIndex + 1 && merge.startCol === col) || { rowSpan: 1, colSpan: 1 };
-                    var planCell = {
-                        PlanId: planId,
-                        RowId: rowIndex + 1,
-                        ColumnId: col,
-                        Name: tableData[rowIndex][col - 1] || '',
-                        BackgroundColor: col - 1 === totalColumnIndex ? 'f0f0f0' : 'ffffff',
-                        FontColor: '000000',
-                        FontSize: formats[rowIndex][`col${col}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
-                        FontWeight: formats[rowIndex][`col${col}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
-                        TextAlign: formats[rowIndex][`col${col}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || (col - 1 === totalColumnIndex ? 'center' : 'left'),
-                        FontFamily: formats[rowIndex][`col${col}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || (col - 1 === totalColumnIndex ? 'Times New Roman' : 'Arial'),
-                        Rowspan: mergeInfo.rowSpan,
-                        Colspan: mergeInfo.colSpan,
-                        RowHeight: rowHeights[rowIndex] || 30,
-                        ColWidth: colWidths[col - 1] || 60,
-                        InputSettings: '',
-                        IsHidden: false,
-                        IsFileUpload: false,
-                        IsDeleted: false,
-                        IsLocked: false
-                    };
-                    planCellsToUpdate.push(planCell);
-                    lockedCells[rowIndex][`col${col}`] = false;
-                    formats[rowIndex][`col${col}`] = `background-color: #${planCell.BackgroundColor}; color: #000000; font-size: ${planCell.FontSize}; font-weight: ${planCell.FontWeight}; text-align: ${planCell.TextAlign}; font-family: ${planCell.FontFamily}`;
-                }
-            }
-        }
-        if (planCellsToUpdate.length === 0) {
-            alert('Không có ô nào trong các dòng được chọn cần mở khóa.');
-            return;
-        }
-        $.ajax({
-            url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(planCellsToUpdate),
-            success: function (response) {
-                if (response.success) {
-                    formats = response.formats;
-                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-                    alert('Mở khóa dòng thành công.');
-                    selectedRows.clear();
-                    $('#excelTable .row-checkbox').prop('checked', false);
-                } else {
-                    alert(response.message);
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Lỗi khi mở khóa dòng:', error);
-                alert('Đã có lỗi xảy ra khi mở khóa dòng: ' + error);
-            }
-        });
-    });
-    $('#uploadForm').on('submit', function (e) {
-        e.preventDefault();
-        var formData = new FormData(this);
-        $.ajax({
-            url: '@Url.Action("UploadExcel", "DetailSettingPlan")',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                if (response.success) {
-                    tableData = response.data;
-                    formats = response.formats;
-                    mergedCells = response.mergedCells;
-                    rowHeights = response.rowHeights;
-                    colWidths = response.colWidths;
-                    totalColumnIndex = response.totalColumnIndex;
-                    validColumnIndices = [...new Set(response.validColumnIndices)];
-                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, []);
-                } else {
-                    alert(response.message);
-                }
-            },
-            error: function () {
-                alert('Đã có lỗi xảy ra khi upload file.');
-            }
-        });
-    });
-    function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
-        var $table = $('#excelTable');
-        var $tbody = $table.find('tbody').empty();
-        var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 64), 60));
-        var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
-        var skipCells = {};
-        pixelColWidths.unshift(50);
-        $.each(data, function (rowIndex, rowData) {
-            var rowHeightPx = pixelRowHeights[rowIndex] || 30;
-            var $tr = $('<tr>').css({
-                'height': rowHeightPx + 'px',
-                'min-height': rowHeightPx + 'px',
-                'max-height': rowHeightPx + 'px'
-            });
-            var $checkboxTd = $('<td>').css({
-                'width': '50px',
-                'min-width': '50px',
-                'max-width': '50px',
-                'height': rowHeightPx + 'px',
-                'min-height': rowHeightPx + 'px',
-                'max-height': rowHeightPx + 'px',
-                'box-sizing': 'border-box',
-                'text-align': 'center',
-                'vertical-align': 'middle'
-            });
-            var $checkbox = $('<input>').attr({
-                'type': 'checkbox',
-                'class': 'row-checkbox',
-                'data-row': rowIndex
-            });
-            $checkboxTd.append($checkbox);
-            $tr.append($checkboxTd);
-            $.each(rowData, function (colIndex, cellData) {
-                var cellKey = `${rowIndex}-${colIndex}`;
-                if (skipCells[cellKey]) return;
-                var $td = $('<td>').text(cellData || '').css({
-                    'width': pixelColWidths[colIndex + 1] + 'px',
-                    'min-width': pixelColWidths[colIndex + 1] + 'px',
-                    'max-width': pixelColWidths[colIndex + 1] + 'px',
-                    'height': rowHeightPx + 'px',
-                    'min-height': rowHeightPx + 'px',
-                    'max-height': rowHeightPx + 'px',
-                    'box-sizing': 'border-box',
-                    'overflow': 'visible'
-                });
-                var css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 11pt; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: ${colIndex === totalColumnIndex ? 'Times New Roman' : 'Arial'}`;
-                var isMerged = false;
-                var hasRowSpan = false;
-                $.each(mergedCells, function (i, merge) {
-                    if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
-                        isMerged = true;
-                        if (merge.rowSpan > 1) {
-                            hasRowSpan = true;
-                        }
-                    }
-                });
-                if (isMerged) {
-                    css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
-                    if (!css.includes('text-align')) {
-                        css += ';text-align: center';
-                    }
-                    if (hasRowSpan) {
-                        css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
-                        if (!css.includes('vertical-align')) {
-                            css += ';vertical-align: middle';
-                        }
-                    }
-                }
-                if (colIndex === totalColumnIndex) {
-                    css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
-                    css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Times New Roman;');
-                    css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
-                    if (!css.includes('text-align')) {
-                        css += ';text-align: center';
-                    }
-                    if (!css.includes('font-family')) {
-                        css += ';font-family: Times New Roman';
-                    }
-                    if (!css.includes('color')) {
-                        css += ';color: #000000';
-                    }
-                    css += ';background-color: #f0f0f0;cursor: not-allowed;';
-                    $td.addClass('disabled-cell');
-                }
-                if (lockedCells[rowIndex] && lockedCells[rowIndex][`col${colIndex + 1}`]) {
-                    css += ';background-color: #d3d3d3;cursor: not-allowed;';
-                    $td.addClass('disabled-cell');
-                }
-                $td.css(css.split(';').reduce((obj, style) => {
-                    const [key, value] = style.split(':').map(s => s.trim());
-                    if (key && value) obj[key] = value;
-                    return obj;
-                }, {}));
-                $td.attr('style', css);
-                $td.data('row', rowIndex).data('col', colIndex);
-                $.each(mergedCells, function (i, merge) {
-                    if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
-                        if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
-                        if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
-                        var mergedWidth = 0;
-                        for (var c = 0; c < merge.colSpan; c++) {
-                            mergedWidth += pixelColWidths[colIndex + 1 + c] || 60;
-                        }
-                        $td.css({
-                            'width': Math.round(mergedWidth) + 'px',
-                            'min-width': Math.round(mergedWidth) + 'px',
-                            'max-width': Math.round(mergedWidth) + 'px',
-                            'height': (rowHeightPx * merge.rowSpan) + 'px',
-                            'min-height': (rowHeightPx * merge.rowSpan) + 'px',
-                            'max-height': (rowHeightPx * merge.rowSpan) + 'px'
-                        });
-                        for (var r = 0; r < merge.rowSpan; r++) {
-                            for (var c = 0; c < merge.colSpan; c++) {
-                                if (r === 0 && c === 0) continue;
-                                skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
-                            }
-                        }
-                    }
-                });
-                if (colIndex !== totalColumnIndex && (!lockedCells[rowIndex] || !lockedCells[rowIndex][`col${colIndex + 1}`])) {
-                    $td.on('contextmenu', function (e) {
-                        e.preventDefault();
-                        selectedCell = { row: rowIndex, col: colIndex, element: $td };
-                        $('#cellInfo').text(`Hàng: ${rowIndex + 1}, Cột: ${colIndex + 1}`);
-                        const currentBgColor = $td.css('background-color') || '#ffffff';
-                        $('#cellColor').val(rgbToHex(currentBgColor));
-                        const modal = new bootstrap.Modal(document.getElementById('contextMenuModal'));
-                        modal.show();
-                        $('#saveCellChanges').off('click').on('click', function () {
-                            if (!selectedCell) return;
-                            const newColor = $('#cellColor').val().replace('#', '');
-                            const rowIndex = selectedCell.row;
-                            const colIndex = selectedCell.col;
-                            if (colIndex === totalColumnIndex) {
-                                alert('Không thể đổi màu ô trong cột tổng cộng.');
-                                selectedCell.element.removeClass('selected-cell');
-                                selectedCell = null;
-                                modal.hide();
-                                return;
-                            }
-                            const $td = selectedCell.element;
-                            let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;
-                            css = css.replace(/background-color:\s*#[0-9a-fA-F]+;/, `background-color: #${newColor};`);
-                            css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
-                            if (!css.includes('background-color')) {
-                                css += `;background-color: #${newColor}`;
-                            }
-                            if (!css.includes('color')) {
-                                css += ';color: #000000';
-                            }
-                            css = css.replace(/;?\s*cursor:\s*not-allowed;/, '');
-                            css = css.replace(/;?\s*background-color:\s*#d3d3d3;/, '');
-                            $td.css(css.split(';').reduce((obj, style) => {
-                                const [key, value] = style.split(':').map(s => s.trim());
-                                if (key && value) obj[key] = value;
-                                return obj;
-                            }, {}));
-                            $td.attr('style', css);
-                            $td.removeClass('disabled-cell');
-                            formats[rowIndex][`col${colIndex + 1}`] = css;
-                            updateCell(rowIndex, colIndex, $td.text(), totalColumnIndex, validColumnIndices, newColor, $td);
-                            selectedCell.element.removeClass('selected-cell');
-                            selectedCell = null;
-                            modal.hide();
-                        });
-                    });
-                    $td.on('click', function (e) {
-                        var $this = $(this);
-                        if ($this.find('input').length > 0) return;
-                        if (selectedCell) {
-                            selectedCell.element.removeClass('selected-cell');
-                        }
-                        selectedCell = { row: rowIndex, col: colIndex, element: $this };
-                        $this.addClass('selected-cell');
-                        var currentText = $this.text() || '';
-                        var currentBgColor = $this.css('background-color') || '#ffffff';
-                        var currentFontColor = '000000';
-                        var cellPadding = parseFloat($this.css('padding') || 5);
-                        var isMerged = $this.attr('rowspan') || $this.attr('colspan');
-                        var hasRowSpan = $this.attr('rowspan') > 1;
-                        var $input = $('<input>').attr('type', 'text').val(currentText).css({
-                            'width': '100%',
-                            'height': '100%',
-                            'box-sizing': 'border-box',
-                            'padding': cellPadding + 'px',
-                            'font-size': $this.css('font-size'),
-                            'font-family': $this.css('font-family'),
-                            'font-weight': $this.css('font-weight'),
-                            'text-align': isMerged ? 'center' : $this.css('text-align'),
-                            'color': '#000000',
-                            'background-color': currentBgColor,
-                            'border': '1px solid #ccc',
-                            'margin': 0,
-                            'display': 'block',
-                            'outline': 'none',
-                            'white-space': 'normal',
-                            'word-wrap': 'break-word'
-                        });
-                        $this.empty().append($input);
-                        $input.focus();
-                        var debouncedUpdate = debounce(function (newValue) {
-                            var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
-                            if (safeValue !== currentText) {
-                                console.log(`Updating cell: row=${rowIndex}, col=${colIndex}, value=${safeValue}`);
-                                updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
-                            }
-                            $this.text(safeValue);
-                            $this.css({
-                                'background-color': currentBgColor,
-                                'color': '#000000',
-                                'text-align': isMerged ? 'center' : $this.css('text-align'),
-                                'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
-                                'overflow': 'visible'
-                            });
-                            $input.remove();
-                            $this.addClass('selected-cell');
-                        }, 500);
-                        $input.on('input', function () {
-                            var newValue = $(this).val() || '';
-                            debouncedUpdate(newValue);
-                        });
-                        $input.on('blur keypress', function (e) {
-                            if (e.type === 'blur' || e.which === 13) {
-                                var newValue = $(this).val() || '';
-                                var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
-                                if (safeValue !== currentText) {
-                                    console.log(`Saving cell: row=${rowIndex}, col=${colIndex}, value=${safeValue}`);
-                                    updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
-                                }
-                                $this.text(safeValue);
-                                $this.css({
-                                    'background-color': currentBgColor,
-                                    'color': '#000000',
-                                    'text-align': isMerged ? 'center' : $this.css('text-align'),
-                                    'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
-                                    'overflow': 'visible'
-                                });
-                                $this.removeClass('selected-cell');
-                                $(this).remove();
-                            }
-                        });
-                    });
-                }
-                $tr.append($td);
-            });
-            $table.append($tr);
-        });
-        $table.css({
-            'table-layout': 'fixed',
-            'width': 'auto',
-            'border-collapse': 'collapse'
-        }).show();
-        if (selectedCell) {
-            const $newSelectedTd = $('#excelTable tbody tr').eq(selectedCell.row).find('td').eq(selectedCell.col + 1);
-            $newSelectedTd.addClass('selected-cell');
-        }
-        selectedRows.forEach(rowIndex => {
-            $('#excelTable tbody tr').eq(rowIndex).find('.row-checkbox').prop('checked', true);
-        });
-    }
-    function updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths) {
-        if (totalColumnIndex === -1 || !validColumnIndices.length) {
-            console.warn('Total column or valid columns not defined');
-            return;
-        }
-        let sum = 0;
-        validColumnIndices.forEach(validCol => {
-            const cellValue = tableData[row][validCol] || '';
-            const numValue = parseFloat(cellValue);
-            if (!isNaN(numValue)) {
-                sum += numValue;
-            }
-        });
-        console.log(`Calculating total for row ${row}: sum=${sum}`);
-        tableData[row][totalColumnIndex] = Math.floor(sum) === sum ? sum.toString() : sum.toFixed(2);
-        const $totalCell = $('#excelTable tbody tr').eq(row).find('td').eq(totalColumnIndex + 1);
-        if ($totalCell.length) {
-            $totalCell.text(tableData[row][totalColumnIndex]);
-        } else {
-            console.warn(`Total cell not found for row=${row}, col=${totalColumnIndex}`);
-        }
-        var planId = @Model.Id;
-        var totalCell = {
-            PlanId: planId,
-            RowId: row + 1,
-            ColumnId: totalColumnIndex + 1,
-            Name: tableData[row][totalColumnIndex],
-            BackgroundColor: formats[row][`col${totalColumnIndex + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'f0f0f0',
-            FontColor: '000000',
-            FontSize: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
-            FontWeight: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
-            TextAlign: formats[row][`col${totalColumnIndex + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || 'center',
-            FontFamily: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Times New Roman',
-            Rowspan: 1,
-            Colspan: 1,
-            RowHeight: rowHeights[row] || 30,
-            ColWidth: colWidths[totalColumnIndex] || 60,
-            InputSettings: '',
-            IsHidden: false,
-            IsFileUpload: false,
-            IsDeleted: false,
-            IsLocked: false
-        };
-        $.ajax({
-            url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify([totalCell]),
-            success: function (response) {
-                if (!response.success) {
-                    console.error('Failed to update total cell:', response.message);
-                    alert(response.message);
-                } else {
-                    console.log(`Total cell updated: row=${row}, value=${totalCell.Name}`);
-                    formats = response.formats;
-                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error updating total cell:', error);
-                alert('Đã có lỗi xảy ra khi cập nhật ô tổng cộng: ' + error);
-            }
-        });
-    }
-    function updateCell(row, col, value, totalColumnIndex, validColumnIndices, newBgColor, $td) {
-        if (col === totalColumnIndex) {
-            console.warn('Attempt to update total column ignored');
-            return;
-        }
-        var safeValue = value === null || value === undefined || value.trim() === '' ? '' : value.trim();
-        console.log(`Updating cell: row=${row}, col=${col}, value=${safeValue}, newBgColor=${newBgColor}`);
-        tableData[row][col] = safeValue;
-        var planId = @Model.Id;
-        var mergeInfo = mergedCells.find(function(merge) {
-            return merge.startRow === row + 1 && merge.startCol === col + 1;
-        });
-        var fontColor = '000000';
-        var planCell = {
-            PlanId: planId,
-            RowId: row + 1,
-            ColumnId: col + 1,
-            Name: safeValue,
-            BackgroundColor: newBgColor || (formats[row][`col${col + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'ffffff'),
-            FontColor: fontColor,
-            FontSize: formats[row][`col${col + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
-            FontWeight: formats[row][`col${col + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
-            TextAlign: formats[row][`col${col + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || 'left',
-            FontFamily: formats[row][`col${col + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Arial',
-            Rowspan: mergeInfo ? mergeInfo.rowSpan : 1,
-            Colspan: mergeInfo ? mergeInfo.colSpan : 1,
-            RowHeight: rowHeights[row] || 30,
-            ColWidth: colWidths[col] || 60,
-            InputSettings: '',
-            IsHidden: false,
-            IsFileUpload: false,
-            IsDeleted: false,
-            IsLocked: lockedCells[row][`col${col + 1}`] || false
-        };
-        if (!planCell.PlanId || planCell.PlanId <= 0) {
-            console.error('Invalid PlanId');
-            alert('PlanId không hợp lệ');
-            return;
-        }
-        if (!planCell.RowId || planCell.RowId <= 0 || !planCell.ColumnId || planCell.ColumnId <= 0) {
-            console.error(`Invalid RowId or ColumnId: RowId=${planCell.RowId}, ColumnId=${planCell.ColumnId}`);
-            alert('RowId hoặc ColumnId không hợp lệ');
-            return;
-        }
-        if (!/^[0-9a-fA-F]{6}$/.test(planCell.BackgroundColor) || !/^[0-9a-fA-F]{6}$/.test(planCell.FontColor)) {
-            console.error(`Invalid color format: BackgroundColor=${planCell.BackgroundColor}, FontColor=${planCell.FontColor}`);
-            alert('Định dạng màu không hợp lệ');
-            return;
-        }
-        $.ajax({
-            url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify([planCell]),
-            success: function (response) {
-                if (response.success) {
-                    console.log(`Cell updated successfully: row=${row}, col=${col}, value=${safeValue}, bgColor=${planCell.BackgroundColor}`);
-                    formats = response.formats;
-                    renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-                    if (totalColumnIndex !== -1 && validColumnIndices.includes(col)) {
-                        console.log(`Triggering total update for row=${row}`);
-                        updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths);
-                    }
-                } else {
-                    console.error('Failed to update cell:', response.message);
-                    alert(response.message);
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error updating cell:', error);
-                alert('Đã có lỗi xảy ra khi cập nhật ô: ' + error);
-            }
-        });
-    }
-    function rgbToHex(rgb) {
-        if (rgb.startsWith('#')) return rgb;
-        const rgbArray = rgb.match(/\d+/g);
-        if (!rgbArray) return '#FFFFFF';
-        const r = parseInt(rgbArray[0]).toString(16).padStart(2, '0');
-        const g = parseInt(rgbArray[1]).toString(16).padStart(2, '0');
-        const b = parseInt(rgbArray[2]).toString(16).padStart(2, '0');
-        return `#${r}${g}${b}`;
-    }
-});
+	$(document).ready(function () {
+		const validColumns = ["Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3"];
+		let tableData = @Html.Raw(ViewBag.TableData ?? "[]");
+		let colWidths = @Html.Raw(ViewBag.ColWidths ?? "[]");
+		let rowHeights = @Html.Raw(ViewBag.RowHeights ?? "[]");
+		let formats = @Html.Raw(ViewBag.Formats ?? "[]");
+		let mergedCells = @Html.Raw(ViewBag.MergedCells ?? "[]");
+		let lockedCells = @Html.Raw(ViewBag.LockedCells ?? "[]");
+		let totalColumnIndex = @ViewBag.TotalColumnIndex;
+		let validColumnIndices = [...new Set(@Html.Raw(ViewBag.ValidColumnIndices ?? "[]"))];
+		let selectedRows = new Set();
+		let selectedCell = null;
+
+		if (tableData.length > 0) {
+			renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+		}
+
+		function debounce(func, wait) {
+			let timeout;
+			return function (...args) {
+				clearTimeout(timeout);
+				timeout = setTimeout(() => func(...args), wait);
+			};
+		}
+
+		$('#excelTable').on('change', '.row-checkbox', function () {
+			const rowIndex = $(this).data('row');
+			if ($(this).is(':checked')) {
+				selectedRows.add(rowIndex);
+			} else {
+				selectedRows.delete(rowIndex);
+			}
+		});
+
+		$('.lock-row').on('click', function () {
+			if (selectedRows.size === 0) {
+				alert('Vui lòng chọn ít nhất một dòng để khóa.');
+				return;
+			}
+			var planId = @Model.Id;
+			var selectedRowsArray = Array.from(selectedRows);
+			$.ajax({
+				url: '@Url.Action("LockRows", "DetailSettingPlan")',
+				type: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify({ planId: planId, selectedRows: selectedRowsArray }),
+				success: function (response) {
+					if (response.success) {
+						tableData = response.tableData;
+						formats = response.formats || formats;
+						lockedCells = response.lockedCells;
+						renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+						alert('Khóa dòng thành công.');
+						selectedRows.clear();
+						$('#excelTable .row-checkbox').prop('checked', false);
+					} else {
+						alert(response.message);
+					}
+				},
+				error: function () {
+					alert('Đã có lỗi xảy ra khi khóa dòng.');
+				}
+			});
+		});
+
+		$('.add-row').on('click', function () {
+			if ($(this).find('i').hasClass('fa-lock-open')) {
+				if (selectedRows.size === 0) {
+					alert('Vui lòng chọn ít nhất một dòng để mở khóa.');
+					return;
+				}
+				var planId = @Model.Id;
+				var selectedRowsArray = Array.from(selectedRows);
+				var planCellsToUpdate = [];
+				for (let rowIndex of selectedRowsArray) {
+					for (let col = 1; col <= tableData[0].length; col++) {
+						if (lockedCells[rowIndex] && lockedCells[rowIndex][`col${col}`]) {
+							var mergeInfo = mergedCells.find(merge => merge.startRow === rowIndex + 1 && merge.startCol === col) || { rowSpan: 1, colSpan: 1 };
+							var planCell = {
+								PlanId: planId,
+								RowId: rowIndex + 1,
+								ColumnId: col,
+								Name: tableData[rowIndex][col - 1] || '',
+								BackgroundColor: col - 1 === totalColumnIndex ? 'f0f0f0' : 'ffffff',
+								FontColor: '000000',
+								FontSize: formats[rowIndex][`col${col}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
+								FontWeight: formats[rowIndex][`col${col}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
+								TextAlign: formats[rowIndex][`col${col}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || (col - 1 === totalColumnIndex ? 'center' : 'left'),
+								FontFamily: formats[rowIndex][`col${col}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || (col - 1 === totalColumnIndex ? 'Times New Roman' : 'Arial'),
+								Rowspan: mergeInfo.rowSpan,
+								Colspan: mergeInfo.colSpan,
+								RowHeight: rowHeights[rowIndex] || 30,
+								ColWidth: colWidths[col - 1] || 60,
+								InputSettings: '',
+								IsHidden: false,
+								IsFileUpload: false,
+								IsDeleted: false,
+								IsLocked: false
+							};
+							planCellsToUpdate.push(planCell);
+							lockedCells[rowIndex][`col${col}`] = false;
+							formats[rowIndex][`col${col}`] = `background-color: #${planCell.BackgroundColor}; color: #000000; font-size: ${planCell.FontSize}; font-weight: ${planCell.FontWeight}; text-align: ${planCell.TextAlign}; font-family: ${planCell.FontFamily}`;
+						}
+					}
+				}
+				if (planCellsToUpdate.length === 0) {
+					alert('Không có ô nào trong các dòng được chọn cần mở khóa.');
+					return;
+				}
+				$.ajax({
+					url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
+					type: 'POST',
+					contentType: 'application/json',
+					data: JSON.stringify(planCellsToUpdate),
+					success: function (response) {
+						if (response.success) {
+							formats = response.formats || formats;
+							renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+							alert('Mở khóa dòng thành công.');
+							selectedRows.clear();
+							$('#excelTable .row-checkbox').prop('checked', false);
+						} else {
+							alert(response.message);
+						}
+					},
+					error: function () {
+						alert('Đã có lỗi xảy ra khi mở khóa dòng.');
+					}
+				});
+			} else {
+				var planId = @Model.Id;
+				var newRowIndex = tableData.length + 1;
+				var numColumns = tableData[0]?.length || colWidths.length || 1;
+				var newRowData = Array(numColumns).fill('');
+				var newRowFormats = {};
+				var newRowLocked = {};
+				var newPlanCells = [];
+				for (let col = 1; col <= numColumns; col++) {
+					var isTotalColumn = col - 1 === totalColumnIndex;
+					var newPlanCell = {
+						PlanId: planId,
+						RowId: newRowIndex,
+						ColumnId: col,
+						Name: '',
+						BackgroundColor: isTotalColumn ? 'f0f0f0' : 'ffffff',
+						FontColor: '000000',
+						FontSize: '11pt',
+						FontWeight: 'normal',
+						TextAlign: isTotalColumn ? 'center' : 'left',
+						FontFamily: isTotalColumn ? 'Times New Roman' : 'Arial',
+						Rowspan: 1,
+						Colspan: 1,
+						RowHeight: 30,
+						ColWidth: colWidths[col - 1] || 60,
+						InputSettings: '',
+						IsHidden: false,
+						IsFileUpload: false,
+						IsDeleted: false,
+						IsLocked: false
+					};
+					newPlanCells.push(newPlanCell);
+					newRowFormats[`col${col}`] = `background-color: #${newPlanCell.BackgroundColor}; color: #${newPlanCell.FontColor}; font-size: ${newPlanCell.FontSize}; font-weight: ${newPlanCell.FontWeight}; text-align: ${newPlanCell.TextAlign}; font-family: ${newPlanCell.FontFamily}`;
+					newRowLocked[`col${col}`] = false;
+				}
+				tableData.push(newRowData);
+				formats.push(newRowFormats);
+				lockedCells.push(newRowLocked);
+				rowHeights.push(30);
+				$.ajax({
+					url: '@Url.Action("AddRow", "DetailSettingPlan")',
+					type: 'POST',
+					contentType: 'application/json',
+					data: JSON.stringify(newPlanCells),
+					success: function (response) {
+						if (response.success) {
+							renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+							alert('Thêm dòng thành công.');
+						} else {
+							tableData.pop();
+							formats.pop();
+							lockedCells.pop();
+							rowHeights.pop();
+							alert(response.message);
+						}
+					},
+					error: function () {
+						tableData.pop();
+						formats.pop();
+						lockedCells.pop();
+						rowHeights.pop();
+						alert('Đã có lỗi xảy ra khi thêm dòng.');
+					}
+				});
+			}
+		});
+
+		$('#uploadForm').on('submit', function (e) {
+			e.preventDefault();
+			var formData = new FormData(this);
+			$.ajax({
+				url: '@Url.Action("UploadExcel", "DetailSettingPlan")',
+				type: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function (response) {
+					if (response.success) {
+						tableData = response.data;
+						formats = response.formats || [];
+						mergedCells = response.mergedCells;
+						rowHeights = response.rowHeights;
+						colWidths = response.colWidths;
+						totalColumnIndex = response.totalColumnIndex;
+						validColumnIndices = [...new Set(response.validColumnIndices)];
+						renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, []);
+					} else {
+						alert(response.message);
+					}
+				},
+				error: function () {
+					alert('Đã có lỗi xảy ra khi upload file.');
+				}
+			});
+		});
+
+		function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
+			var $table = $('#excelTable');
+			var $tbody = $table.find('tbody').empty();
+			var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 64), 60));
+			var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+			var skipCells = {};
+			pixelColWidths.unshift(50);
+
+			var $fragment = $(document.createDocumentFragment());
+			$.each(data, function (rowIndex, rowData) {
+				var rowHeightPx = pixelRowHeights[rowIndex] || 30;
+				var $tr = $('<tr>').css({
+					'height': rowHeightPx + 'px',
+					'min-height': rowHeightPx + 'px',
+					'max-height': rowHeightPx + 'px'
+				});
+				var $checkboxTd = $('<td>').css({
+					'width': '50px',
+					'min-width': '50px',
+					'max-width': '50px',
+					'height': rowHeightPx + 'px',
+					'min-height': rowHeightPx + 'px',
+					'max-height': rowHeightPx + 'px',
+					'box-sizing': 'border-box',
+					'text-align': 'center',
+					'vertical-align': 'middle'
+				});
+				var $checkbox = $('<input>').attr({
+					'type': 'checkbox',
+					'class': 'row-checkbox',
+					'data-row': rowIndex
+				});
+				$checkboxTd.append($checkbox);
+				$tr.append($checkboxTd);
+
+				$.each(rowData, function (colIndex, cellData) {
+					var cellKey = `${rowIndex}-${colIndex}`;
+					if (skipCells[cellKey]) return;
+					var $td = $('<td>').text(cellData || '').css({
+						'width': pixelColWidths[colIndex + 1] + 'px',
+						'min-width': pixelColWidths[colIndex + 1] + 'px',
+						'max-width': pixelColWidths[colIndex + 1] + 'px',
+						'height': rowHeightPx + 'px',
+						'min-height': rowHeightPx + 'px',
+						'max-height': rowHeightPx + 'px',
+						'box-sizing': 'border-box',
+						'overflow': 'visible',
+						'display': 'table-cell'
+					});
+					var css = formats[rowIndex] && formats[rowIndex][`col${colIndex + 1}`]
+						? formats[rowIndex][`col${colIndex + 1}`]
+						: `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 11pt; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: ${colIndex === totalColumnIndex ? 'Times New Roman' : 'Arial'}`;
+					var isMerged = false;
+					var hasRowSpan = false;
+					$.each(mergedCells, function (i, merge) {
+						if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+							isMerged = true;
+							if (merge.rowSpan > 1) hasRowSpan = true;
+						}
+					});
+					if (isMerged) {
+						css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+						if (!css.includes('text-align')) css += ';text-align: center';
+						if (hasRowSpan) {
+							css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
+							if (!css.includes('vertical-align')) css += ';vertical-align: middle';
+						}
+					}
+					if (colIndex === totalColumnIndex) {
+						css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+						css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Times New Roman;');
+						css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
+						if (!css.includes('text-align')) css += ';text-align: center';
+						if (!css.includes('font-family')) css += ';font-family: Times New Roman';
+						if (!css.includes('color')) css += ';color: #000000';
+						css += ';background-color: #f0f0f0;cursor: not-allowed;';
+						$td.addClass('disabled-cell');
+					}
+					if (lockedCells[rowIndex] && lockedCells[rowIndex][`col${colIndex + 1}`]) {
+						css += ';cursor: not-allowed;';
+						$td.addClass('disabled-cell');
+					}
+					$td.css(css.split(';').reduce((obj, style) => {
+						const [key, value] = style.split(':').map(s => s.trim());
+						if (key && value) obj[key] = value;
+						return obj;
+					}, {}));
+					$td.attr('style', css);
+					$td.data('row', rowIndex).data('col', colIndex);
+					$.each(mergedCells, function (i, merge) {
+						if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+							if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
+							if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
+							var mergedWidth = 0;
+							for (var c = 0; c < merge.colSpan; c++) {
+								mergedWidth += pixelColWidths[colIndex + 1 + c] || 60;
+							}
+							$td.css({
+								'width': Math.round(mergedWidth) + 'px',
+								'min-width': Math.round(mergedWidth) + 'px',
+								'max-width': Math.round(mergedWidth) + 'px',
+								'height': (rowHeightPx * merge.rowSpan) + 'px',
+								'min-height': (rowHeightPx * merge.rowSpan) + 'px',
+								'max-height': (rowHeightPx * merge.rowSpan) + 'px'
+							});
+							for (var r = 0; r < merge.rowSpan; r++) {
+								for (var c = 0; c < merge.colSpan; c++) {
+									if (r === 0 && c === 0) continue;
+									skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
+								}
+							}
+						}
+					});
+					if (colIndex !== totalColumnIndex && (!lockedCells[rowIndex] || !lockedCells[rowIndex][`col${colIndex + 1}`])) {
+						$td.on('contextmenu', function (e) {
+							e.preventDefault();
+							selectedCell = { row: rowIndex, col: colIndex, element: $td };
+							$('#cellInfo').text(`Hàng: ${rowIndex + 1}, Cột: ${colIndex + 1}`);
+							const currentBgColor = $td.css('background-color') || '#ffffff';
+							$('#cellColor').val(rgbToHex(currentBgColor));
+							const modal = new bootstrap.Modal(document.getElementById('contextMenuModal'));
+							modal.show();
+							$('#saveCellChanges').off('click').on('click', function () {
+								if (!selectedCell) return;
+								const newColor = $('#cellColor').val().replace('#', '');
+								const rowIndex = selectedCell.row;
+								const colIndex = selectedCell.col;
+								if (colIndex === totalColumnIndex) {
+									alert('Không thể đổi màu ô trong cột tổng cộng.');
+									selectedCell.element.removeClass('selected-cell');
+									selectedCell = null;
+									modal.hide();
+									return;
+								}
+								const $td = selectedCell.element;
+								let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;
+								css = css.replace(/background-color:\s*#[0-9a-fA-F]+;/, `background-color: #${newColor};`);
+								css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
+								if (!css.includes('background-color')) css += `;background-color: #${newColor}`;
+								if (!css.includes('color')) css += ';color: #000000';
+								css = css.replace(/;?\s*cursor:\s*not-allowed;/, '');
+								$td.css(css.split(';').reduce((obj, style) => {
+									const [key, value] = style.split(':').map(s => s.trim());
+									if (key && value) obj[key] = value;
+									return obj;
+								}, {}));
+								$td.attr('style', css);
+								$td.removeClass('disabled-cell');
+								formats[rowIndex][`col${colIndex + 1}`] = css;
+								updateCell(rowIndex, colIndex, $td.text(), totalColumnIndex, validColumnIndices, newColor, $td);
+								selectedCell.element.removeClass('selected-cell');
+								selectedCell = null;
+								modal.hide();
+							});
+						});
+						$td.on('click', function (e) {
+							var $this = $(this);
+							if ($this.find('input').length > 0) return;
+							if (selectedCell) {
+								selectedCell.element.removeClass('selected-cell');
+							}
+							selectedCell = { row: rowIndex, col: colIndex, element: $this };
+							$this.addClass('selected-cell');
+							var currentText = $this.text() || '';
+							var currentBgColor = $this.css('background-color') || '#ffffff';
+							var cellPadding = parseFloat($this.css('padding') || 5);
+							var isMerged = $this.attr('rowspan') || $this.attr('colspan');
+							var hasRowSpan = $this.attr('rowspan') > 1;
+							var $input = $('<input>').attr('type', 'text').val(currentText).css({
+								'width': '100%',
+								'height': '100%',
+								'box-sizing': 'border-box',
+								'padding': cellPadding + 'px',
+								'font-size': $this.css('font-size'),
+								'font-family': $this.css('font-family'),
+								'font-weight': $this.css('font-weight'),
+								'text-align': isMerged ? 'center' : $this.css('text-align'),
+								'color': '#000000',
+								'background-color': currentBgColor,
+								'border': '1px solid #ccc',
+								'margin': 0,
+								'display': 'block',
+								'outline': 'none',
+								'white-space': 'normal',
+								'word-wrap': 'break-word'
+							});
+							$this.empty().append($input);
+							$input.focus();
+							var debouncedUpdate = debounce(function (newValue) {
+								var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+								if (safeValue !== currentText) {
+									updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+								}
+								$this.text(safeValue);
+								$this.css({
+									'background-color': currentBgColor,
+									'color': '#000000',
+									'text-align': isMerged ? 'center' : $this.css('text-align'),
+									'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+									'overflow': 'visible',
+									'display': 'table-cell'
+								});
+								$input.remove();
+								$this.addClass('selected-cell');
+							}, 200);
+							$input.on('input', function () {
+								var newValue = $(this).val() || '';
+								debouncedUpdate(newValue);
+							});
+							$input.on('blur keypress', function (e) {
+								if (e.type === 'blur' || e.which === 13) {
+									var newValue = $(this).val() || '';
+									var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+									if (safeValue !== currentText) {
+										updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+									}
+									$this.text(safeValue);
+									$this.css({
+										'background-color': currentBgColor,
+										'color': '#000000',
+										'text-align': isMerged ? 'center' : $this.css('text-align'),
+										'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+										'overflow': 'visible',
+										'display': 'table-cell'
+									});
+									$this.removeClass('selected-cell');
+									$(this).remove();
+								}
+							});
+						});
+					}
+					$tr.append($td);
+				});
+				$fragment.append($tr);
+			});
+			$tbody.append($fragment);
+			$table.css({
+				'table-layout': 'fixed',
+				'width': 'auto',
+				'border-collapse': 'collapse',
+				'display': 'table !important'
+			}).show();
+			if (selectedCell) {
+				const $newSelectedTd = $('#excelTable tbody tr').eq(selectedCell.row).find('td').eq(selectedCell.col + 1);
+				$newSelectedTd.addClass('selected-cell');
+			}
+			selectedRows.forEach(rowIndex => {
+				$('#excelTable tbody tr').eq(rowIndex).find('.row-checkbox').prop('checked', true);
+			});
+		}
+
+		function updateCell(row, col, value, totalColumnIndex, validColumnIndices, newBgColor, $td) {
+			if (col === totalColumnIndex) return;
+			var safeValue = value === null || value === undefined || value.trim() === '' ? '' : value.trim();
+			tableData[row][col] = safeValue;
+			var planId = @Model.Id;
+			var mergeInfo = mergedCells.find(merge => merge.startRow === row + 1 && merge.startCol === col + 1);
+			var planCell = {
+				PlanId: planId,
+				RowId: row + 1,
+				ColumnId: col + 1,
+				Name: safeValue,
+				BackgroundColor: newBgColor || (formats[row][`col${col + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'ffffff'),
+				FontColor: '000000',
+				FontSize: formats[row][`col${col + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
+				FontWeight: formats[row][`col${col + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
+				TextAlign: formats[row][`col${col + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || 'left',
+				FontFamily: formats[row][`col${col + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Arial',
+				Rowspan: mergeInfo ? mergeInfo.rowSpan : 1,
+				Colspan: mergeInfo ? mergeInfo.colSpan : 1,
+				RowHeight: rowHeights[row] || 30,
+				ColWidth: colWidths[col] || 60,
+				InputSettings: '',
+				IsHidden: false,
+				IsFileUpload: false,
+				IsDeleted: false,
+				IsLocked: lockedCells[row][`col${col + 1}`] || false
+			};
+			if (!planCell.PlanId || planCell.PlanId <= 0) {
+				alert('PlanId không hợp lệ');
+				return;
+			}
+			if (!planCell.RowId || planCell.RowId <= 0 || !planCell.ColumnId || planCell.ColumnId <= 0) {
+				alert('RowId hoặc ColumnId không hợp lệ');
+				return;
+			}
+			if (!/^[0-9a-fA-F]{6}$/.test(planCell.BackgroundColor) || !/^[0-9a-fA-F]{6}$/.test(planCell.FontColor)) {
+				alert('Định dạng màu không hợp lệ');
+				return;
+			}
+			$.ajax({
+				url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
+				type: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify([planCell]),
+				success: function (response) {
+					if (response.success) {
+						formats = response.formats || formats;
+						renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+						if (totalColumnIndex !== -1 && validColumnIndices.includes(col)) {
+							updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths);
+						}
+					} else {
+						alert(response.message);
+					}
+				},
+				error: function () {
+					alert('Đã có lỗi xảy ra khi cập nhật ô.');
+				}
+			});
+		}
+
+		function updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths) {
+			if (totalColumnIndex === -1 || !validColumnIndices.length) return;
+			let sum = 0;
+			validColumnIndices.forEach(validCol => {
+				const cellValue = tableData[row][validCol] || '';
+				const numValue = parseFloat(cellValue);
+				if (!isNaN(numValue)) sum += numValue;
+			});
+			tableData[row][totalColumnIndex] = Math.floor(sum) === sum ? sum.toString() : sum.toFixed(2);
+			const $totalCell = $('#excelTable tbody tr').eq(row).find('td').eq(totalColumnIndex + 1);
+			if ($totalCell.length) {
+				$totalCell.text(tableData[row][totalColumnIndex]);
+			}
+			var planId = @Model.Id;
+			var totalCell = {
+				PlanId: planId,
+				RowId: row + 1,
+				ColumnId: totalColumnIndex + 1,
+				Name: tableData[row][totalColumnIndex],
+				BackgroundColor: formats[row][`col${totalColumnIndex + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'f0f0f0',
+				FontColor: '000000',
+				FontSize: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
+				FontWeight: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
+				TextAlign: formats[row][`col${totalColumnIndex + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || 'center',
+				FontFamily: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Times New Roman',
+				Rowspan: 1,
+				Colspan: 1,
+				RowHeight: rowHeights[row] || 30,
+				ColWidth: colWidths[totalColumnIndex] || 60,
+				InputSettings: '',
+				IsHidden: false,
+				IsFileUpload: false,
+				IsDeleted: false,
+				IsLocked: false
+			};
+			$.ajax({
+				url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
+				type: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify([totalCell]),
+				success: function (response) {
+					if (!response.success) {
+						alert(response.message);
+					} else {
+						formats = response.formats || formats;
+						renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+					}
+				},
+				error: function () {
+					alert('Đã có lỗi xảy ra khi cập nhật ô tổng cộng.');
+				}
+			});
+		}
+
+		function rgbToHex(rgb) {
+			if (rgb.startsWith('#')) return rgb;
+			const rgbArray = rgb.match(/\d+/g);
+			if (!rgbArray) return '#FFFFFF';
+			const r = parseInt(rgbArray[0]).toString(16).padStart(2, '0');
+			const g = parseInt(rgbArray[1]).toString(16).padStart(2, '0');
+			const b = parseInt(rgbArray[2]).toString(16).padStart(2, '0');
+			return `#${r}${g}${b}`;
+		}
+	});
 </script>

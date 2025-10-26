@@ -19,6 +19,13 @@ body {
   border-left: 1px solid #ccc;
   border-right: 1px solid #ccc;
 }
+.plan-link {
+  color: #337ab7;
+  text-decoration: none;
+}
+  .plan-link:hover {
+    text-decoration: underline;
+  }
 
 .table-container {
   padding-left: 20px;

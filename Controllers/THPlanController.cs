@@ -29,7 +29,8 @@ namespace PLANMHE.Controllers
       return View();
     }
 
-    public async Task<IActionResult> ListTHPlan(string status = "all", string search = "")
+    [HttpGet]
+    public async Task<IActionResult> ListTHPlan(string search = "")
     {
       var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
       ViewBag.Debug = $"UserId Claim: {userIdClaim}, Claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}: {c.Value}"))}";
@@ -37,17 +38,17 @@ namespace PLANMHE.Controllers
       {
         return RedirectToAction("LoginBasic", "Auth", new { returnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
       }
+
       var user = await _authService.GetUserByIdAsync(userId);
       bool isAdmin = user?.UserTypeId == 1;
       var plans = _thPlanService.GetPlansByUserId(userId, isAdmin).AsQueryable();
-      if (status != "all")
-      {
-        plans = plans.Where(p => p.Status == status);
-      }
+
+      // Lọc theo tên nếu có từ khóa tìm kiếm
       if (!string.IsNullOrEmpty(search))
       {
         plans = plans.Where(p => p.Name.ToLower().Contains(search.ToLower()));
       }
+
       return View("~/Views/THPlan/ListTHPlan.cshtml", plans.ToList());
     }
 
@@ -64,7 +65,7 @@ namespace PLANMHE.Controllers
         ViewBag.AssignedUsers = assignedUsers;
         var planCells = await _thPlanService.GetPlanCellsByPlanId(id);
         bool hasLockedCells = planCells.Any(pc => pc.IsLocked && !pc.IsDeleted && !pc.IsHidden);
-        if (!hasLockedCells)
+        if (!hasLockedCells && plan.Status != "Completed")
         {
           return RedirectToAction("ListTHPlan");
         }
@@ -92,10 +93,8 @@ namespace PLANMHE.Controllers
         var rowHeights = new List<double>();
         var colWidths = new List<double>();
         var lockedCells = new List<Dictionary<string, object>>();
-
         if (maxRow > 0 && maxCol > 0)
         {
-          // Khởi tạo tableData và lockedCells
           for (int row = 1; row <= maxRow; row++)
           {
             var rowData = new List<object>();
@@ -109,8 +108,7 @@ namespace PLANMHE.Controllers
             tableData.Add(rowData);
             lockedCells.Add(rowLocked);
           }
-          // Tính toán và cập nhật cột Tổng cộng
-          if (totalColumnIndex != -1)
+          if (totalColumnIndex != -1 && plan.Status != "Completed")
           {
             for (int row = 2; row <= maxRow; row++)
             {
@@ -124,7 +122,6 @@ namespace PLANMHE.Controllers
                 }
               }
               tableData[row - 1][totalColumnIndex] = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##");
-              // Cập nhật hoặc tạo mới ô Tổng cộng trong database
               var totalCell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == totalColumnIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
               if (totalCell != null)
               {
@@ -160,7 +157,6 @@ namespace PLANMHE.Controllers
               }
             }
           }
-          // Tạo định dạng ô
           for (int row = 1; row <= maxRow; row++)
           {
             var rowFormats = new Dictionary<string, string>();
@@ -184,7 +180,6 @@ namespace PLANMHE.Controllers
             }
             cellFormats.Add(rowFormats);
           }
-          // Tạo mergedCells và lockedCells
           foreach (var cell in planCells.Where(pc => (pc.Rowspan > 1 || pc.Colspan > 1) && !pc.IsDeleted && !pc.IsHidden))
           {
             mergedCells.Add(new Dictionary<string, object>
@@ -563,8 +558,52 @@ namespace PLANMHE.Controllers
     {
       try
       {
+        var plan = await _thPlanService.GetPlanById(planId);
+        if (plan == null)
+        {
+          return Json(new { success = false, message = "Không tìm thấy kế hoạch!" });
+        }
+        if (plan.Status == "Completed")
+        {
+          return Json(new { success = false, message = "Kế hoạch đã hoàn thành rồi!" });
+        }
         await _thPlanService.ConfirmPlanAsync(planId);
-        return Json(new { success = true, message = "✅ KẾ HOẠCH ĐÃ HOÀN THÀNH!" });
+        var planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
+        int totalColumnIndex = -1;
+        var validColumnIndices = new List<int>();
+        string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
+        var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
+        foreach (var cell in headerCells)
+        {
+          if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
+          {
+            totalColumnIndex = cell.ColumnId - 1;
+          }
+          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
+          {
+            validColumnIndices.Add(cell.ColumnId - 1);
+          }
+        }
+        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+        int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
+        int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+        return Json(new
+        {
+          success = true,
+          message = "✅ KẾ HOẠCH ĐÃ HOÀN THÀNH!",
+          data = new
+          {
+            tableData,
+            formats = cellFormats,
+            mergedCells,
+            rowHeights,
+            colWidths,
+            totalColumnIndex,
+            validColumnIndices,
+            lockedCells
+          }
+        });
       }
       catch (Exception ex)
       {

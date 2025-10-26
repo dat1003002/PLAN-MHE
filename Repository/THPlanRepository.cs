@@ -82,7 +82,6 @@ namespace PLANMHE.Repository
       }
       await _context.SaveChangesAsync();
     }
-
     public async Task AddRowAsync(int planId, int rowId)
     {
       var planCells = await _context.PlanCells
@@ -182,11 +181,12 @@ namespace PLANMHE.Repository
       var plan = await _context.Plans.FirstOrDefaultAsync(p => p.Id == planId);
       if (plan == null)
         throw new Exception("Không tìm thấy kế hoạch!");
-
       if (plan.Status == "Completed")
         throw new Exception("Kế hoạch đã hoàn thành rồi!");
-
       plan.Status = "Completed";
+      await _context.PlanCells
+          .Where(pc => pc.PlanId == planId && !pc.IsDeleted && !pc.IsHidden)
+          .ExecuteUpdateAsync(setters => setters.SetProperty(pc => pc.IsLocked, true));
       await _context.SaveChangesAsync();
     }
   }

@@ -22,10 +22,10 @@
       [Required]
       public string Status { get; set; } = "Active";
       [Required]
-      public int CreatedBy { get; set; } // Thêm: ID của người tạo kế hoạch
-      public User? Creator { get; set; } // Thêm: Thuộc tính điều hướng tới User
+      public int CreatedBy { get; set; }
+      public User? Creator { get; set; } 
       [DataType(DataType.DateTime)]
-      public DateTime? CreatedDate { get; set; } = DateTime.UtcNow; // Thêm: Thời gian tạo (tùy chọn)
+      public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
       public ICollection<UserPlan> UserPlans { get; set; }
       public ICollection<PlanCell> PlanCells { get; set; }
     }

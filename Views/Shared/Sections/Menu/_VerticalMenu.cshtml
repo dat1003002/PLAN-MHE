@@ -54,24 +54,24 @@
                 </li>
             </ul>
         </li>
-		<li class='menu-item@(currentPage.StartsWith("/THPlan") ? " active open" : "")'>
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class='menu-icon fa fa-check-square-o'></i>
-                <div>Quản Lý Kế Hoạch</div>
-            </a>
-            <ul class="menu-sub">
-                <li class='menu-item@(currentPage == "/THPlan/ListTHPlan" ? " active" : "")'>
+		<li class='menu-item@(currentPage.StartsWith("/THPlan") || currentPage.StartsWith("/HistoryPlan") ? " active open" : "")'>
+			<a href="javascript:void(0);" class="menu-link menu-toggle">
+				<i class='menu-icon fa fa-check-square-o'></i>
+				<div>Quản Lý Kế Hoạch</div>
+			</a>
+			<ul class="menu-sub">
+				<li class='menu-item@(currentPage == "/THPlan/ListTHPlan" ? " active" : "")'>
 					<a asp-controller="THPlan" asp-action="ListTHPlan" class="menu-link">
-                        <div>Thực Hiện Kế Hoạch</div>
-                    </a>
-                </li>
-                <li class='menu-item@(currentPage == "/Xuathangkho/Listxuathangkho" ? " active" : "")'>
-                    <a asp-controller="Xuathangkho" asp-action="Listxuathangkho" class="menu-link">
-                        <div>Lịch Sử Kế Hoạch</div>
-                    </a>
-                </li>
-            </ul>
-        </li>
+						<div>Thực Hiện Kế Hoạch</div>
+					</a>
+				</li>
+				<li class='menu-item@(currentPage == "/HistoryPlan/ListLichsuKeHoach" ? " active" : "")'>
+					<a asp-controller="HistoryPlan" asp-action="ListLichsuKeHoach" class="menu-link">
+						<div>Lịch Sử Kế Hoạch</div>
+					</a>
+				</li>
+			</ul>
+		</li>
         @if (isAdmin)
         {
             <li class='menu-item@(currentPage.StartsWith("/SettingUser") ? " active open" : "")'>

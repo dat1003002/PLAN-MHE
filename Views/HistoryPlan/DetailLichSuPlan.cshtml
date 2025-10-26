@@ -1,0 +1,241 @@
+@model PLANMHE.Models.Plan
+@{
+    ViewData["Title"] = "Lịch Sử Kế Hoạch";
+    ViewData["CurrentPage"] = "/HistoryPlan/Detail";
+}
+
+<!-- Thêm CDN của SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Thêm CDN của jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Thêm CDN của Font Awesome (nếu chưa có) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+
+<div class="main-box">
+    <div class="header-section">
+        <div class="left-icon"><i class="ace-icon fa fa-star orange"></i></div>
+        <div class="page-title">Lịch Sử Kế Hoạch Sản Xuất</div>
+        <div class="right-settings"><i class="fa fa-regular fa-gear"></i></div>
+    </div>
+</div>
+<div class="outer-wrapper">
+    <div class="tabs">
+        <button class="active">Lịch sử kế hoạch</button>
+    </div>
+    <div class="tab-pane" style="padding:0px;">
+        <div id="tableContainer" class="table-container">
+            <table id="excelTable" class="table excel-table" style="display: none;">
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="foter-category" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 16px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); text-align: right; z-index: 1000;">
+    <button type="button" class="import" onclick="exportToExcel()" style="background-color:white; border:1px solid #a7c9a1; font-family: 'Times New Roman', sans-serif; padding:4px; color:#a7c9a1;">
+        <i class="fa-solid fa-file-excel" style="padding-right: 5px;"></i>Xuất Excel
+    </button>
+</div>
+
+<script>
+$(document).ready(function () {
+    let tableData = @Html.Raw(ViewBag.TableData ?? "[]");
+    let colWidths = @Html.Raw(ViewBag.ColWidths ?? "[]");
+    let rowHeights = @Html.Raw(ViewBag.RowHeights ?? "[]");
+    let formats = @Html.Raw(ViewBag.Formats ?? "[]");
+    let mergedCells = @Html.Raw(ViewBag.MergedCells ?? "[]");
+    let totalColumnIndex = @ViewBag.TotalColumnIndex;
+    let validColumnIndices = [...new Set(@Html.Raw(ViewBag.ValidColumnIndices ?? "[]"))];
+    let lockedCells = @Html.Raw(ViewBag.LockedCells ?? "[]");
+    let selectedCell = null;
+
+    if (tableData.length > 0) {
+        renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+    }
+
+    // Hàm xuất file Excel
+    window.exportToExcel = function () {
+        if (!tableData || tableData.length === 0) {
+            alert("Không có dữ liệu để xuất!");
+            return;
+        }
+
+        // Tạo workbook mới
+        const wb = XLSX.utils.book_new();
+        
+        // Tạo worksheet từ tableData
+        const ws = XLSX.utils.json_to_sheet(tableData, { skipHeader: true });
+
+        // Áp dụng các ô gộp (merged cells)
+        ws['!merges'] = mergedCells.map(merge => ({
+            s: { r: merge.startRow - 1, c: merge.startCol - 1 },
+            e: { r: merge.startRow - 1 + (merge.rowSpan - 1), c: merge.startCol - 1 + (merge.colSpan - 1) }
+        }));
+
+        // Đặt chiều rộng cột
+        ws['!cols'] = colWidths.map(width => ({ wpx: Math.max(Math.round(width || 60), 60) }));
+
+        // Đặt chiều cao hàng
+        ws['!rows'] = rowHeights.map(height => ({ hpx: Math.max(Math.round(height || 30), 30) }));
+
+        // Áp dụng định dạng cho từng ô
+        tableData.forEach((row, rowIndex) => {
+            row.forEach((cellData, colIndex) => {
+                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+                const cellFormat = formats[rowIndex][`col${colIndex + 1}`] || '';
+                
+                // Phân tích CSS từ formats
+                let bgColor = '#ffffff';
+                let fgColor = '#000000';
+                let fontSize = 14;
+                let fontWeight = 'normal';
+                let textAlign = colIndex === totalColumnIndex ? 'center' : 'left';
+                let fontName = 'Segoe UI';
+
+                cellFormat.split(';').forEach(style => {
+                    const [key, value] = style.split(':').map(s => s.trim());
+                    if (key === 'background-color') bgColor = value.replace('#', '');
+                    if (key === 'color') fgColor = value.replace('#', '');
+                    if (key === 'font-size') fontSize = parseFloat(value) || 14;
+                    if (key === 'font-weight') fontWeight = value;
+                    if (key === 'text-align') textAlign = value;
+                    if (key === 'font-family') fontName = value;
+                });
+
+                // Áp dụng định dạng cho ô
+                ws[cellAddress] = ws[cellAddress] || { v: cellData || '' };
+                ws[cellAddress].s = {
+                    fill: { fgColor: { rgb: bgColor } },
+                    font: {
+                        name: fontName,
+                        sz: fontSize * 0.75, // Chuyển từ px sang pt (1px ≈ 0.75pt)
+                        bold: fontWeight === 'bold' || parseInt(fontWeight) > 600,
+                        color: { rgb: fgColor }
+                    },
+                    alignment: {
+                        horizontal: textAlign,
+                        vertical: 'center'
+                    }
+                };
+            });
+        });
+
+        // Thêm worksheet vào workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Plan");
+
+        // Xuất file Excel
+        const planId = @Model.Id;
+        XLSX.writeFile(wb, `Plan_${planId}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    };
+
+    function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
+        const $table = $('#excelTable');
+        const $tbody = $table.find('tbody').empty();
+        const pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 60), 60));
+        const pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+        const skipCells = {};
+        const fragment = document.createDocumentFragment();
+
+        data.forEach((rowData, rowIndex) => {
+            const rowHeightPx = pixelRowHeights[rowIndex] || 30;
+            const $tr = $('<tr>').css({
+                'height': rowHeightPx + 'px',
+                'min-height': rowHeightPx + 'px',
+                'max-height': rowHeightPx + 'px'
+            });
+
+            rowData.forEach((cellData, colIndex) => {
+                const cellKey = `${rowIndex}-${colIndex}`;
+                if (skipCells[cellKey]) return;
+
+                const $td = $('<td>').text(cellData || '').css({
+                    'width': pixelColWidths[colIndex] + 'px',
+                    'min-width': pixelColWidths[colIndex] + 'px',
+                    'max-width': pixelColWidths[colIndex] + 'px',
+                    'height': rowHeightPx + 'px',
+                    'min-height': rowHeightPx + 'px',
+                    'max-height': rowHeightPx + 'px',
+                    'box-sizing': 'border-box',
+                    'overflow': 'visible'
+                });
+
+                let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 14px; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: Segoe UI`;
+                let isMerged = false;
+                let hasRowSpan = false;
+
+                mergedCells.forEach(merge => {
+                    if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+                        isMerged = true;
+                        if (merge.rowSpan > 1) hasRowSpan = true;
+                    }
+                });
+
+                if (isMerged) {
+                    css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+                    if (!css.includes('text-align')) css += ';text-align: center';
+                    if (hasRowSpan) {
+                        css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
+                        if (!css.includes('vertical-align')) css += ';vertical-align: middle';
+                    }
+                }
+
+                if (colIndex === totalColumnIndex) {
+                    css += ';background-color: #f0f0f0;cursor: not-allowed;';
+                    $td.addClass('disabled-cell');
+                }
+
+                const isLocked = lockedCells.some(cell => cell.row === rowIndex + 1 && cell.col === colIndex + 1);
+                if (isLocked) {
+                    css += ';cursor: not-allowed;';
+                    $td.addClass('disabled-cell');
+                }
+
+                $td.css(css.split(';').reduce((obj, style) => {
+                    const [key, value] = style.split(':').map(s => s.trim());
+                    if (key && value) obj[key] = value;
+                    return obj;
+                }, {}));
+
+                $td.attr('style', css);
+                $td.data('row', rowIndex).data('col', colIndex);
+
+                mergedCells.forEach(merge => {
+                    if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+                        if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
+                        if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
+                        let mergedWidth = 0;
+                        for (let c = 0; c < merge.colSpan; c++) {
+                            mergedWidth += pixelColWidths[colIndex + c] || 60;
+                        }
+                        $td.css({
+                            'width': Math.round(mergedWidth) + 'px',
+                            'min-width': Math.round(mergedWidth) + 'px',
+                            'max-width': Math.round(mergedWidth) + 'px',
+                            'height': (rowHeightPx * merge.rowSpan) + 'px',
+                            'min-height': (rowHeightPx * merge.rowSpan) + 'px',
+                            'max-height': (rowHeightPx * merge.rowSpan) + 'px'
+                        });
+
+                        for (let r = 0; r < merge.rowSpan; r++) {
+                            for (let c = 0; c < merge.colSpan; c++) {
+                                if (r === 0 && c === 0) continue;
+                                skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
+                            }
+                        }
+                    }
+                });
+
+                $tr.append($td);
+            });
+
+            fragment.appendChild($tr[0]);
+        });
+
+        $tbody.append(fragment);
+        $table.css({
+            'table-layout': 'fixed',
+            'width': 'auto',
+            'border-collapse': 'collapse'
+        }).show();
+    }
+});
+</script>
