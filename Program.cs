@@ -7,6 +7,7 @@ using PLANMHE.Repositories;
 using PLANMHE.Services;
 using PLANMHE.Repositories.Interfaces;
 using PLANMHE.Services.Interfaces;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,11 +43,14 @@ builder.Services.AddScoped<IDetailkehoachReposive, DetailkehoachReposive>();
 builder.Services.AddScoped<IDetailkehoachService, DetailkehoachService>();
 builder.Services.AddScoped<ILichSuPlanReponsitory, LichSuPlanReponsitory>();
 builder.Services.AddScoped<ILichSuPlanService, LichSuPlanService>();
+builder.Services.AddScoped<IDashboardsRepository, DashboardsRepository>();
+builder.Services.AddScoped<IDashboardsService, DashboardsService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 if (!app.Environment.IsDevelopment())
 {
@@ -59,6 +63,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+// EPPlus License (Non-Commercial)
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 app.MapControllerRoute(
     name: "default",

@@ -14,7 +14,6 @@ namespace PLANMHE.Models
 
     public string? Note { get; set; } // Cho phép null, không thay đổi
 
-    // Thuộc tính điều hướng cho mối quan hệ một- \$ nhiều với User
     public ICollection<User> Users { get; set; }
 
     public UserType()

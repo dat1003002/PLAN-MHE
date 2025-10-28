@@ -519,7 +519,7 @@ div.dt-container div.dt-layout-row {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-bottom: 0.75em 0;
+  margin: 0.75em 0;
 }
 div.dt-container div.dt-layout-row div.dt-layout-cell {
   display: flex;
@@ -584,16 +584,6 @@ div.dt-container div.dt-layout-table > div {
 /*
  * Control feature layout
  */
-.dataTables_length {
-  float: left; /* Đặt nó sang bên trái */
-  margin-right: 10px; /* Thêm khoảng cách bên phải */
-}
-
-.dataTables_filter {
-  float: left; /* Đặt nó sang bên trái */
-  margin-left: 10px; /* Thêm khoảng cách bên trái */
-}
- 
 div.dt-container {
   position: relative;
   clear: both;
@@ -605,8 +595,6 @@ div.dt-container .dt-search input {
   background-color: transparent;
   color: inherit;
   margin-left: 3px;
-  margin-right:30px;
-  width: 18rem;
 }
 div.dt-container .dt-input {
   border: 1px solid #aaa;

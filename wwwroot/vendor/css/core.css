@@ -212,7 +212,6 @@ h6, .h6 {
 
 p {
   margin-top: 0;
-  margin-bottom: 1rem;
 }
 
 abbr[title] {
@@ -7322,9 +7321,6 @@ a.invert-bg-dark:hover, a.invert-bg-dark:focus {
 
 .container-p-y:not([class^=pt-]):not([class*=" pt-"]) {
   padding-top: 1.5rem !important;
-}
-.container-p-y:not([class^=pb-]):not([class*=" pb-"]) {
-  padding-bottom: 1.5rem !important;
 }
 
 .container-m-ny:not([class^=mt-]):not([class*=" mt-"]) {

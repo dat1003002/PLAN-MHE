@@ -360,7 +360,6 @@ select {
 }
 
 .date-divider {
-  margin: 0 10px;
   font-size: 16px;
   color: #888;
 }
@@ -502,14 +501,20 @@ table {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
+  align-items:center;
+}
+.search-date p {
+  color: #333;
+  font-weight: bold;
+  font-size: 13px;
 }
 
-  .search-area input {
-    padding: 3px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    width: 15%;
-  }
+.search-area input {
+  padding: 3px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 15%;
+}
 
     .search-area input:focus {
       outline: none;

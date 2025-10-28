@@ -1,32 +1,47 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using PLANMHE.Service;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace AspnetCoreMvcFull.Controllers;
-
-public class DashboardsController : Controller
+namespace AspnetCoreMvcFull.Controllers
 {
   [Authorize]
-  public IActionResult Index()
+  public class DashboardsController : Controller
   {
-    return View();
-  }
+    private readonly IDashboardsService _dashboardsService;
 
-  [HttpPost]
-  public async Task<IActionResult> Logout()
-  {
-    // Đăng xuất người dùng bằng cách xóa cookie xác thực
-    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    public DashboardsController(IDashboardsService dashboardsService)
+    {
+      _dashboardsService = dashboardsService;
+    }
 
-    // Thêm các tiêu đề để ngăn lưu cache
-    Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-    Response.Headers["Pragma"] = "no-cache";
-    Response.Headers["Expires"] = "0";
+    public async Task<IActionResult> Index()
+    {
+      var recentPlans = await _dashboardsService.GetTop5RecentPlansWithStatusAsync();
 
-    // Trả về OK để JavaScript phía client xử lý chuyển hướng
-    return Ok();
+      // Lấy dòng tóm tắt (dòng cuối cùng)
+      var summary = recentPlans.LastOrDefault() ?? new Dictionary<string, object>();
+
+      // Truyền dữ liệu cho View
+      ViewData["RecentPlans"] = recentPlans;
+      ViewData["TotalPlans"] = summary.GetValueOrDefault("TotalPlans", 0);
+      ViewData["CompletedPlans"] = summary.GetValueOrDefault("CompletedPlans", 0);
+      ViewData["ActivePlans"] = summary.GetValueOrDefault("ActivePlans", 0);
+
+      return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Logout()
+    {
+      await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+      Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+      Response.Headers["Pragma"] = "no-cache";
+      Response.Headers["Expires"] = "0";
+      return Ok();
+    }
   }
 }

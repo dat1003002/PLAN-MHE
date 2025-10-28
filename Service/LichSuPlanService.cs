@@ -13,6 +13,7 @@ namespace PLANMHE.Service
       _repository = repository;
     }
 
+    // GIỮ NGUYÊN
     public IEnumerable<Plan> GetAllPlans()
     {
       return _repository.GetAllPlans();
@@ -21,6 +22,17 @@ namespace PLANMHE.Service
     public Plan GetPlanById(int id)
     {
       return _repository.GetPlanById(id);
+    }
+
+    // MỚI: DÀNH CHO DANH SÁCH
+    public IEnumerable<Plan> GetPlansForList(int pageNumber, int pageSize)
+    {
+      return _repository.GetPlansForList(pageNumber, pageSize);
+    }
+
+    public int GetTotalPlanCount()
+    {
+      return _repository.GetTotalPlanCount();
     }
   }
 }

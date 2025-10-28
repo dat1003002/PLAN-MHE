@@ -10,7 +10,6 @@ namespace PLANMHE.Models
     [Required]
     public int PlanId { get; set; }
 
-    // Thuộc tính điều hướng
     public User User { get; set; }
     public Plan Plan { get; set; }
   }

@@ -30,10 +30,9 @@ namespace PLANMHE.Controllers
     }
 
     [HttpGet]
-    public async Task<IActionResult> ListTHPlan(string search = "")
+    public async Task<IActionResult> ListTHPlan(string search = "", int pageNumber = 1)
     {
       var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      ViewBag.Debug = $"UserId Claim: {userIdClaim}, Claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}: {c.Value}"))}";
       if (!int.TryParse(userIdClaim, out int userId))
       {
         return RedirectToAction("LoginBasic", "Auth", new { returnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
@@ -41,15 +40,35 @@ namespace PLANMHE.Controllers
 
       var user = await _authService.GetUserByIdAsync(userId);
       bool isAdmin = user?.UserTypeId == 1;
-      var plans = _thPlanService.GetPlansByUserId(userId, isAdmin).AsQueryable();
 
-      // Lọc theo tên nếu có từ khóa tìm kiếm
+      // LẤY DANH SÁCH PLAN (giống HistoryPlan: KHÔNG dùng AsQueryable + ToList sớm)
+      var allPlans = _thPlanService.GetPlansByUserId(userId, isAdmin);
+
+      // LỌC THEO TÊN (server-side, để phân trang đúng)
       if (!string.IsNullOrEmpty(search))
       {
-        plans = plans.Where(p => p.Name.ToLower().Contains(search.ToLower()));
+        allPlans = allPlans.Where(p => p.Name.ToLower().Contains(search.ToLower())).ToList();
       }
 
-      return View("~/Views/THPlan/ListTHPlan.cshtml", plans.ToList());
+      // PHÂN TRANG
+      const int pageSize = 10;
+      var totalItems = allPlans.Count;
+      var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+      pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages > 0 ? totalPages : 1));
+
+      var paginatedPlans = allPlans
+          .OrderByDescending(p => p.StartDate)
+          .Skip((pageNumber - 1) * pageSize)
+          .Take(pageSize)
+          .ToList();
+
+      // GÁN ViewBag CHUẨN int, KHÔNG string
+      ViewBag.CurrentPage = pageNumber;
+      ViewBag.TotalPages = totalPages;
+      ViewBag.Search = search;
+
+      // TRUYỀN IEnumerable<Plan> (giống HistoryPlan)
+      return View(paginatedPlans.AsEnumerable());
     }
 
     public async Task<IActionResult> Detail(int id)

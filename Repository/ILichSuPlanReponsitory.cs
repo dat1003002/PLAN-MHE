@@ -5,7 +5,12 @@ namespace PLANMHE.Repository
 {
   public interface ILichSuPlanReponsitory
   {
-    IEnumerable<Plan> GetAllPlans();
-    Plan GetPlanById(int id);
+    // GIỮ NGUYÊN CÁC HÀM CŨ
+    IEnumerable<Plan> GetAllPlans();     // Dùng cho Detail, Export
+    Plan GetPlanById(int id);            // Dùng cho Detail, Export
+
+    // THÊM MỚI: DÀNH RIÊNG CHO DANH SÁCH (KHÔNG TẢI PlanCells)
+    IEnumerable<Plan> GetPlansForList(int pageNumber, int pageSize);
+    int GetTotalPlanCount();
   }
 }
