@@ -64,7 +64,36 @@
   position: relative;
   box-sizing: border-box;
 }
+.action-eye-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+padding: 2px 6px;
+  background-color: #6FB3E0; /* Nền xanh nhạt */
+  border: 1px solid #2E6589; /* Viền xanh nhạt */
+  color: white; /* Màu icon mắt */
+  font-size: 16px; /* Kích thước icon */
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
 
+  .action-eye-btn i {
+    margin: 0;
+    pointer-events: none;
+  }
+
+/* Căn giữa ô Hành Động */
+td.action-center {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 6px 4px !important;
+}
+
+/* Đảm bảo icon không bị méo */
+.ace-icon.fa-eye {
+  font-size: 16px;
+}
   .quick-link-item:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 20px rgba(0,0,0,0.18);
