@@ -1,0 +1,180 @@
+/* wwwroot/css/dashboard.css */
+/* ================== CONTAINER CHÍNH ================== */
+.quick-links-container,
+.stats-container {
+  width: 100%;
+  border: 1px solid #eee;
+  margin-bottom: 20px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+/* ================== HEADER ================== */
+.quick-links-header,
+.stats-header {
+  font-size: 16px;
+  font-family: 'Times New Roman', sans-serif;
+  padding-left: 15px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  line-height: 36px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-weight: bold;
+}
+
+  .quick-links-header i,
+  .stats-header i {
+    margin-right: 8px;
+    color: #fc7913;
+    font-weight: bold;
+  }
+/* ================== WRAPPER LIÊN KẾT NHANH ================== */
+.quick-links-wrapper {
+  padding: 15px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+  flex-grow: 1;
+  align-items: stretch;
+  min-height: 120px;
+}
+/* ================== ITEM LIÊN KẾT ================== */
+/* Chỉ dùng .quick-link-item → Specificity: (0,1,0) */
+.quick-link-item {
+  /* Thay vì width cố định 210px, dùng flex-basis + max-width */
+  flex: 0 1 210px; /* co giãn từ 210px, không lớn hơn */
+  min-width: 160px; /* nhỏ nhất vẫn đọc được */
+  max-width: 210px; /* không vượt quá 210px */
+  width: auto; /* cho phép co giãn */
+  /* Giữ nguyên các style khác */
+  min-height: 100px;
+  color: white;
+  padding: 14px;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  box-sizing: border-box;
+}
+.action-eye-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+padding: 2px 6px;
+  background-color: #6FB3E0; /* Nền xanh nhạt */
+  border: 1px solid #2E6589; /* Viền xanh nhạt */
+  color: white; /* Màu icon mắt */
+  font-size: 16px; /* Kích thước icon */
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+  .action-eye-btn i {
+    margin: 0;
+    pointer-events: none;
+  }
+
+/* Căn giữa ô Hành Động */
+td.action-center {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 6px 4px !important;
+}
+
+/* Đảm bảo icon không bị méo */
+.ace-icon.fa-eye {
+  font-size: 16px;
+}
+  .quick-link-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.18);
+  }
+
+  .quick-link-item i {
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+
+  .quick-link-item .title {
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+/* ================== MÀU NỀN TỪNG MỤC ================== */
+.ql-checklist {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.ql-execute {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+.ql-pending {
+  background: linear-gradient(135deg, #FF9800, #F57C00);
+}
+
+.ql-approved {
+  background: linear-gradient(135deg, #4CAF50, #388E3C);
+}
+
+.ql-rejected {
+  background: linear-gradient(135deg, #F44336, #D32F2F);
+}
+/* ================== BADGE SỐ LƯỢNG ================== */
+.badge-count {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #2c3e50;
+  color: white;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+.chart-container {
+  padding: 10px 15px; /* Giảm padding để tiết kiệm chiều cao */
+  height: 500px; /* ← Chiều cao cố định mong muốn (có thể điều chỉnh 160-200px) */
+  position: relative; /* Canvas fill đúng container */
+  overflow: hidden; /* Ngăn tràn */
+}
+
+#completionChart {
+  background-color: white;
+}
+
+.stats-container {
+  min-height: 220px; /* Tổng chiều cao hợp lý (header + chart) */
+  overflow: hidden; /* Đảm bảo không tràn */
+}
+/* ================== RESPONSIVE ================== */
+@media (max-width: 768px) {
+  .quick-links-wrapper {
+    justify-content: center;
+  }
+
+  .quick-link-item {
+    width: calc(50% - 6px);
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-link-item {
+    width: 100%;
+  }
+}

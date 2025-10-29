@@ -1,41 +1,23 @@
 <environment include="Development">
-	<!-- Fonts & Flag icons -->
 	<link rel="stylesheet" href="~/vendor/fonts/boxicons.css" />
-	<link rel="stylesheet" href="~/vendor/font-awesome-4.7.0/css/font-awesome.min.css">
-
-	<!-- Core CSS -->
-	<link rel="stylesheet" href="~/vendor/css/core.css" class="template-customizer-core-css" />
-	<link rel="stylesheet" href="~/vendor/css/theme-default.css" class="template-customizer-theme-css" />
-	<link rel="stylesheet" href="~/css/demo.css" />
-	<link rel="stylesheet" href="~/css/site.css />
-
-	<!-- `perfect-scrollbar` library required by SideNav plugin -->
+	<link rel="stylesheet" href="~/vendor/font-awesome-4.7.0/css/font-awesome.min.css" />
+	<link rel="stylesheet" href="~/vendor/css/core.css" />
+	<link rel="stylesheet" href="~/vendor/css/theme-default.css" />
+	<link rel="stylesheet" href="~/vendor/css/demo.css" />
+	<link rel="stylesheet" href="~/vendor/css/site.css" />
 	<link rel="stylesheet" href="~/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
-
-	<!-- Pages CSS -->
 	<link rel="stylesheet" href="~/vendor/css/pages/page-auth.css" />
-
-	<!-- Application stylesheets -->
-	<link rel="stylesheet" href="~/css/site.css" />
-	<link href="~/lib/datatables.net/css/datatables.datatables.css" rel="stylesheet" />
 	<link href="~/lib/datatables.net/css/datatables.datatables.min.css" rel="stylesheet" />
 </environment>
 
 <environment exclude="Development">
-	<!-- Fonts & Flag icons -->
-	<link rel="stylesheet" href="~/vendor/fonts/boxicons.css" asp-append-version="true" />
-
-	<!-- Core CSS -->
-	<link rel="stylesheet" href="~/vendor/css/core.css" class="template-customizer-core-css" asp-append-version="true" />
-	<link rel="stylesheet" href="~/vendor/css/theme-default.css" class="template-customizer-theme-css" asp-append-version="true" />
-	<link href="~/lib/datatables.net/css/datatables.datatables.css" asp-append-version="true" rel="stylesheet" />
-	<link href="~/lib/datatables.net/css/datatables.datatables.min.css" asp-append-version="true" rel="stylesheet" />
-	<!-- `perfect-scrollbar` library required by SideNav plugin -->
-	<link rel="stylesheet" href="~/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" asp-append-version="true" />
-
-	<!-- Pages CSS -->
-	<link rel="stylesheet" href="~/vendor/css/pages/page-auth.css" asp-append-version="true" />
-
-	<!-- Application stylesheets -->
-	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/fonts/boxicons.css"))" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/font-awesome-4.7.0/css/font-awesome.min.css"))" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/css/core.css"))" class="template-customizer-core-css" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/css/theme-default.css"))" class="template-customizer-theme-css" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/css/demo.css"))" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/css/site.css"))" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"))" asp-append-version="true" />
+	<link rel="stylesheet" href="@(Url.Content("~/vendor/css/pages/page-auth.css"))" asp-append-version="true" />
+	<link href="@(Url.Content("~/lib/datatables.net/css/datatables.datatables.min.css"))" asp-append-version="true" rel="stylesheet" />
 </environment>
