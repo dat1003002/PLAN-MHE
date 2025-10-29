@@ -16,7 +16,7 @@ namespace PLANMHE.Repository
       _context = context;
     }
 
-    // GIỮ NGUYÊN: DÙNG CHO DETAIL & EXPORT
+    // DÙNG CHO DETAIL & EXPORT
     public IEnumerable<Plan> GetAllPlans()
     {
       return _context.Plans
@@ -33,11 +33,14 @@ namespace PLANMHE.Repository
           .FirstOrDefault(p => p.Id == id);
     }
 
-    // MỚI: CHỈ DÙNG CHO DANH SÁCH – KHÔNG TẢI PlanCells
+    // MỚI: DÀNH CHO DANH SÁCH – TẢI THÊM USER THỰC HIỆN
     public IEnumerable<Plan> GetPlansForList(int pageNumber, int pageSize)
     {
       return _context.Plans
+          .AsNoTracking() // Tối ưu: không theo dõi (read-only)
           .Include(p => p.Creator)
+          .Include(p => p.UserPlans)
+              .ThenInclude(up => up.User) // Tải User từ bảng trung gian
           .OrderByDescending(p => p.StartDate)
           .Skip((pageNumber - 1) * pageSize)
           .Take(pageSize)
