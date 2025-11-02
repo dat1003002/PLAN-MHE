@@ -24,10 +24,7 @@ namespace PLANMHE.Controllers
       _authService = authService;
     }
 
-    public IActionResult Index()
-    {
-      return View();
-    }
+    public IActionResult Index() => View();
 
     [HttpGet]
     public async Task<IActionResult> ListTHPlan(string search = "", int pageNumber = 1)
@@ -41,16 +38,13 @@ namespace PLANMHE.Controllers
       var user = await _authService.GetUserByIdAsync(userId);
       bool isAdmin = user?.UserTypeId == 1;
 
-      // LẤY DANH SÁCH PLAN (giống HistoryPlan: KHÔNG dùng AsQueryable + ToList sớm)
       var allPlans = _thPlanService.GetPlansByUserId(userId, isAdmin);
 
-      // LỌC THEO TÊN (server-side, để phân trang đúng)
       if (!string.IsNullOrEmpty(search))
       {
         allPlans = allPlans.Where(p => p.Name.ToLower().Contains(search.ToLower())).ToList();
       }
 
-      // PHÂN TRANG
       const int pageSize = 10;
       var totalItems = allPlans.Count;
       var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
@@ -62,12 +56,10 @@ namespace PLANMHE.Controllers
           .Take(pageSize)
           .ToList();
 
-      // GÁN ViewBag CHUẨN int, KHÔNG string
       ViewBag.CurrentPage = pageNumber;
       ViewBag.TotalPages = totalPages;
       ViewBag.Search = search;
 
-      // TRUYỀN IEnumerable<Plan> (giống HistoryPlan)
       return View(paginatedPlans.AsEnumerable());
     }
 
@@ -76,150 +68,64 @@ namespace PLANMHE.Controllers
       try
       {
         var plan = await _thPlanService.GetPlanById(id);
-        if (plan == null)
-        {
-          return NotFound();
-        }
+        if (plan == null) return NotFound();
+
         var assignedUsers = await _thPlanService.GetAssignedUsersByPlanId(id);
         ViewBag.AssignedUsers = assignedUsers;
+
         var planCells = await _thPlanService.GetPlanCellsByPlanId(id);
-        bool hasLockedCells = planCells.Any(pc => pc.IsLocked && !pc.IsDeleted && !pc.IsHidden);
-        if (!hasLockedCells && plan.Status != "Completed")
-        {
+
+        // === XÓA HOÀN TOÀN ĐOẠN KIỂM TRA LOCK (KHÔNG CẦN KHI MỞ TRANG) ===
+        // bool hasLockedCells = planCells.Any(pc => pc.IsLocked && !pc.IsDeleted && !pc.IsHidden);
+        // if (!hasLockedCells && plan.Status != "Completed")
+        //     return RedirectToAction("ListTHPlan");
+
+        // === DÙNG TRỰC TIẾP STATUS (NHANH HƠN) ===
+        if (plan.Status != "Completed" && !planCells.Any(pc => pc.IsLocked))
           return RedirectToAction("ListTHPlan");
-        }
+
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
         foreach (var cell in headerCells)
         {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
         int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
+
         var tableData = new List<List<object>>();
         var cellFormats = new List<Dictionary<string, string>>();
         var mergedCells = new List<Dictionary<string, object>>();
         var rowHeights = new List<double>();
         var colWidths = new List<double>();
         var lockedCells = new List<Dictionary<string, object>>();
+
         if (maxRow > 0 && maxCol > 0)
         {
-          for (int row = 1; row <= maxRow; row++)
-          {
-            var rowData = new List<object>();
-            var rowLocked = new Dictionary<string, object>();
-            for (int col = 1; col <= maxCol; col++)
-            {
-              var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
-              rowData.Add(cell?.Name?.Trim() ?? "");
-              rowLocked[$"col{col}"] = cell?.IsLocked ?? false;
-            }
-            tableData.Add(rowData);
-            lockedCells.Add(rowLocked);
-          }
-          if (totalColumnIndex != -1 && plan.Status != "Completed")
-          {
-            for (int row = 2; row <= maxRow; row++)
-            {
-              double total = 0;
-              foreach (int colIndex in validColumnIndices)
-              {
-                var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == colIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
-                if (cell != null && double.TryParse(cell.Name?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
-                {
-                  total += value;
-                }
-              }
-              tableData[row - 1][totalColumnIndex] = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##");
-              var totalCell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == totalColumnIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
-              if (totalCell != null)
-              {
-                totalCell.Name = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##");
-                await _thPlanService.UpdatePlanCellAsync(totalCell);
-              }
-              else
-              {
-                var newTotalCell = new PlanCell
-                {
-                  PlanId = id,
-                  RowId = row,
-                  ColumnId = totalColumnIndex + 1,
-                  Name = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##"),
-                  BackgroundColor = "f0f0f0",
-                  FontColor = "000000",
-                  FontSize = "14px",
-                  FontWeight = "normal",
-                  TextAlign = "center",
-                  FontFamily = "Segoe UI",
-                  Rowspan = 1,
-                  Colspan = 1,
-                  RowHeight = 30,
-                  ColWidth = 60,
-                  InputSettings = "",
-                  IsHidden = false,
-                  IsFileUpload = false,
-                  IsDeleted = false,
-                  IsLocked = true
-                };
-                await _thPlanService.UpdatePlanCellAsync(newTotalCell);
-                planCells.Add(newTotalCell);
-              }
-            }
-          }
-          for (int row = 1; row <= maxRow; row++)
-          {
-            var rowFormats = new Dictionary<string, string>();
-            for (int col = 1; col <= maxCol; col++)
-            {
-              var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
-              var css = new List<string>
-                            {
-                                $"background-color: #{cell?.BackgroundColor ?? (col - 1 == totalColumnIndex ? "f0f0f0" : "ffffff")}",
-                                $"color: #{cell?.FontColor ?? "000000"}",
-                                $"font-size: {cell?.FontSize ?? "14px"}",
-                                $"font-weight: {cell?.FontWeight ?? "normal"}",
-                                $"text-align: {cell?.TextAlign ?? (cell?.Rowspan > 1 || cell?.Colspan > 1 ? "center" : (col - 1 == totalColumnIndex ? "center" : "left"))}",
-                                $"font-family: {cell?.FontFamily ?? "Segoe UI"}"
-                            };
-              if (col - 1 == totalColumnIndex || (cell != null && cell.IsLocked))
-              {
-                css.Add("cursor: not-allowed");
-              }
-              rowFormats[$"col{col}"] = string.Join("; ", css);
-            }
-            cellFormats.Add(rowFormats);
-          }
-          foreach (var cell in planCells.Where(pc => (pc.Rowspan > 1 || pc.Colspan > 1) && !pc.IsDeleted && !pc.IsHidden))
-          {
-            mergedCells.Add(new Dictionary<string, object>
-                        {
-                            { "startRow", cell.RowId },
-                            { "startCol", cell.ColumnId },
-                            { "rowSpan", cell.Rowspan ?? 1 },
-                            { "colSpan", cell.Colspan ?? 1 }
-                        });
-          }
-          foreach (var cell in planCells.Where(pc => pc.IsLocked && !pc.IsDeleted && !pc.IsHidden))
-          {
-            lockedCells.Add(new Dictionary<string, object>
-                        {
-                            { "row", cell.RowId },
-                            { "col", cell.ColumnId }
-                        });
-          }
-          rowHeights.AddRange(planCells.GroupBy(pc => pc.RowId).Select(g => g.First().RowHeight > 0 ? g.First().RowHeight : 30));
-          colWidths.AddRange(planCells.GroupBy(pc => pc.ColumnId).Select(g => g.First().ColWidth > 0 ? g.First().ColWidth : 60));
+          // === XÓA HOÀN TOÀN ĐOẠN TÍNH TỔNG TRƯỚC (ĐÃ TÍNH KHI NHẬP) ===
+          // if (totalColumnIndex != -1 && plan.Status != "Completed") { ... }
+
+          // === CHỈ GỌI PrepareTableData 1 LẦN DUY NHẤT ===
+          var (td, cf, mc, rh, cw, lc) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
+          tableData = td;
+          cellFormats = cf;
+          mergedCells = mc;
+          rowHeights = rh;
+          colWidths = cw;
+          lockedCells = lc;
         }
+
         ViewBag.TableData = JsonSerializer.Serialize(tableData);
         ViewBag.Formats = JsonSerializer.Serialize(cellFormats);
         ViewBag.MergedCells = JsonSerializer.Serialize(mergedCells);
@@ -228,6 +134,7 @@ namespace PLANMHE.Controllers
         ViewBag.TotalColumnIndex = totalColumnIndex;
         ViewBag.ValidColumnIndices = JsonSerializer.Serialize(validColumnIndices);
         ViewBag.LockedCells = JsonSerializer.Serialize(lockedCells);
+
         return View("~/Views/THPlan/Detail.cshtml", plan);
       }
       catch (Exception ex)
@@ -235,118 +142,87 @@ namespace PLANMHE.Controllers
         return StatusCode(500, "Lỗi khi lấy chi tiết kế hoạch: " + ex.Message);
       }
     }
-
     [HttpPost]
     public async Task<IActionResult> UpdateCell([FromBody] PlanCell planCell)
     {
       try
       {
         if (planCell == null || planCell.PlanId <= 0 || planCell.RowId <= 0 || planCell.ColumnId <= 0)
-        {
           return Json(new { success = false, message = "Dữ liệu ô không hợp lệ." });
-        }
-        var existingCell = await _thPlanService.GetPlanCellsByPlanId(planCell.PlanId);
-        var targetCell = existingCell.FirstOrDefault(pc => pc.RowId == planCell.RowId && pc.ColumnId == planCell.ColumnId && !pc.IsDeleted && !pc.IsHidden);
-        if (targetCell != null && targetCell.IsLocked)
-        {
-          return Json(new { success = false, message = "Ô này đã bị khóa và không thể chỉnh sửa." });
-        }
+
+        // LẤY DỮ LIỆU 1 LẦN DUY NHẤT
         var planCells = await _thPlanService.GetPlanCellsByPlanId(planCell.PlanId);
+        var targetCell = planCells.FirstOrDefault(pc =>
+            pc.RowId == planCell.RowId && pc.ColumnId == planCell.ColumnId && !pc.IsDeleted && !pc.IsHidden);
+        if (targetCell != null && targetCell.IsLocked)
+          return Json(new { success = false, message = "Ô này đã bị khóa và không thể chỉnh sửa." });
+
+        // XÁC ĐỊNH CỘT TỔNG & CÁC CỘT NGÀY
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
         foreach (var cell in headerCells)
-        {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
-        }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .ToList();
+
+        // CẬP NHẬT Ô NGƯỜI DÙNG
         await _thPlanService.UpdatePlanCellAsync(planCell);
+
+        // TÍNH TỔNG DÙNG LOOKUP (SIÊU NHANH)
         if (totalColumnIndex != -1 && validColumnIndices.Contains(planCell.ColumnId - 1))
         {
-          var cellsToUpdate = new List<PlanCell>();
+          var cellLookup = planCells.ToLookup(pc => (pc.RowId, pc.ColumnId));
           double total = 0;
-          foreach (int colIndex in validColumnIndices)
+          foreach (int colIdx in validColumnIndices)
           {
-            var cell = planCells.FirstOrDefault(pc => pc.RowId == planCell.RowId && pc.ColumnId == colIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
-            if (cell != null && double.TryParse(cell.Name?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
-            {
-              total += value;
-            }
-            if (cell == null && colIndex == planCell.ColumnId - 1 && double.TryParse(planCell.Name?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double newValue))
-            {
-              total += newValue;
-            }
+            var cell = cellLookup[(planCell.RowId, colIdx + 1)].FirstOrDefault();
+            if (cell != null && double.TryParse(cell.Name?.Replace(",", "."),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double val))
+              total += val;
           }
-          var totalCell = planCells.FirstOrDefault(pc => pc.RowId == planCell.RowId && pc.ColumnId == totalColumnIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
-          if (totalCell != null)
-          {
-            totalCell.Name = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##");
-            cellsToUpdate.Add(totalCell);
-          }
-          else
-          {
-            var newTotalCell = new PlanCell
-            {
-              PlanId = planCell.PlanId,
-              RowId = planCell.RowId,
-              ColumnId = totalColumnIndex + 1,
-              Name = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##"),
-              BackgroundColor = "f0f0f0",
-              FontColor = "000000",
-              FontSize = "14px",
-              FontWeight = "normal",
-              TextAlign = "center",
-              FontFamily = "Segoe UI",
-              Rowspan = 1,
-              Colspan = 1,
-              RowHeight = planCells.FirstOrDefault(pc => pc.RowId == planCell.RowId)?.RowHeight ?? 30,
-              ColWidth = planCells.FirstOrDefault(pc => pc.ColumnId == totalColumnIndex + 1)?.ColWidth ?? 60,
-              InputSettings = "",
-              IsHidden = false,
-              IsFileUpload = false,
-              IsDeleted = false,
-              IsLocked = true
-            };
-            cellsToUpdate.Add(newTotalCell);
-          }
-          foreach (var cell in cellsToUpdate)
-          {
-            await _thPlanService.UpdatePlanCellAsync(cell);
-          }
+
+          string totalText = Math.Floor(total) == total ? total.ToString("0") : total.ToString("0.##");
+          var totalCell = cellLookup[(planCell.RowId, totalColumnIndex + 1)].FirstOrDefault()
+                         ?? new PlanCell { PlanId = planCell.PlanId, RowId = planCell.RowId, ColumnId = totalColumnIndex + 1 };
+
+          totalCell.Name = totalText;
+          totalCell.BackgroundColor = "f0f0f0";
+          totalCell.IsLocked = true;
+          totalCell.TextAlign = "center";
+          totalCell.FontFamily = "Segoe UI";
+
+          await _thPlanService.UpdatePlanCellAsync(totalCell);
         }
-        int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
-        int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
-        await UpdateRowLockStatus(planCell.PlanId, planCells, totalColumnIndex, validColumnIndices, maxRow);
+
+        // CẬP NHẬT LOCK & TẢI LẠI DỮ LIỆU
+        int maxRow = planCells.Max(pc => pc.RowId);
+        if (totalColumnIndex != -1 && validColumnIndices.Any())
+          await UpdateRowLockStatus(planCell.PlanId, planCells, totalColumnIndex, validColumnIndices, maxRow);
+
+        // TẢI LẠI DỮ LIỆU MỚI NHẤT
         planCells = await _thPlanService.GetPlanCellsByPlanId(planCell.PlanId);
-        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+        int maxCol = planCells.Max(pc => pc.ColumnId);
+
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) =
+            PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
         return Json(new
         {
           success = true,
-          message = "Cập nhật ô thành công.",
-          data = new
-          {
-            tableData,
-            formats = cellFormats,
-            mergedCells,
-            rowHeights,
-            colWidths,
-            totalColumnIndex,
-            validColumnIndices,
-            lockedCells
-          }
+          message = "Cập nhật thành công.",
+          data = new { tableData, formats = cellFormats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells }
         });
       }
       catch (Exception ex)
       {
-        return Json(new { success = false, message = $"Lỗi khi cập nhật ô: {ex.Message}. Inner Exception: {ex.InnerException?.Message}" });
+        return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
       }
     }
 
@@ -357,45 +233,41 @@ namespace PLANMHE.Controllers
       {
         await _thPlanService.AddRowAsync(planId);
         var planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
+
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
+
         foreach (var cell in headerCells)
         {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
         int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
+
         if (totalColumnIndex != -1 && validColumnIndices.Any())
         {
           await UpdateRowLockStatus(planId, planCells, totalColumnIndex, validColumnIndices, maxRow);
           planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
         }
-        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) =
+            PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
         return Json(new
         {
           success = true,
           message = "Thêm dòng thành công.",
-          data = new
-          {
-            tableData,
-            formats = cellFormats,
-            mergedCells,
-            rowHeights,
-            colWidths,
-            totalColumnIndex,
-            validColumnIndices,
-            lockedCells
-          }
+          data = new { tableData, formats = cellFormats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells }
         });
       }
       catch (Exception ex)
@@ -411,45 +283,41 @@ namespace PLANMHE.Controllers
       {
         await _thPlanService.AddColumnAsync(planId);
         var planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
+
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
+
         foreach (var cell in headerCells)
         {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
         int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
+
         if (totalColumnIndex != -1 && validColumnIndices.Any())
         {
           await UpdateRowLockStatus(planId, planCells, totalColumnIndex, validColumnIndices, maxRow);
           planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
         }
-        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) =
+            PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
         return Json(new
         {
           success = true,
           message = "Thêm cột thành công.",
-          data = new
-          {
-            tableData,
-            formats = cellFormats,
-            mergedCells,
-            rowHeights,
-            colWidths,
-            totalColumnIndex,
-            validColumnIndices,
-            lockedCells
-          }
+          data = new { tableData, formats = cellFormats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells }
         });
       }
       catch (Exception ex)
@@ -465,45 +333,41 @@ namespace PLANMHE.Controllers
       {
         await _thPlanService.DeleteRowAsync(planId, rowId);
         var planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
+
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
+
         foreach (var cell in headerCells)
         {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
         int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
+
         if (totalColumnIndex != -1 && validColumnIndices.Any())
         {
           await UpdateRowLockStatus(planId, planCells, totalColumnIndex, validColumnIndices, maxRow);
           planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
         }
-        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) =
+            PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
         return Json(new
         {
           success = true,
           message = "Xóa dòng thành công.",
-          data = new
-          {
-            tableData,
-            formats = cellFormats,
-            mergedCells,
-            rowHeights,
-            colWidths,
-            totalColumnIndex,
-            validColumnIndices,
-            lockedCells
-          }
+          data = new { tableData, formats = cellFormats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells }
         });
       }
       catch (Exception ex)
@@ -520,50 +384,45 @@ namespace PLANMHE.Controllers
         var planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
         var totalColumn = planCells.FirstOrDefault(pc => pc.RowId == 1 && (pc.Name.ToLower().Contains("tổng cộng") || pc.Name.ToLower().Contains("total")));
         if (totalColumn != null && totalColumn.ColumnId == columnId)
-        {
           return Json(new { success = false, message = "Không thể xóa cột Tổng cộng." });
-        }
+
         await _thPlanService.DeleteColumnAsync(planId, columnId);
         planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
+
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
+
         foreach (var cell in headerCells)
         {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
         int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
+
         if (totalColumnIndex != -1 && validColumnIndices.Any())
         {
           await UpdateRowLockStatus(planId, planCells, totalColumnIndex, validColumnIndices, maxRow);
           planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
         }
-        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) =
+            PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
         return Json(new
         {
           success = true,
           message = "Xóa cột thành công.",
-          data = new
-          {
-            tableData,
-            formats = cellFormats,
-            mergedCells,
-            rowHeights,
-            colWidths,
-            totalColumnIndex,
-            validColumnIndices,
-            lockedCells
-          }
+          data = new { tableData, formats = cellFormats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells }
         });
       }
       catch (Exception ex)
@@ -578,50 +437,40 @@ namespace PLANMHE.Controllers
       try
       {
         var plan = await _thPlanService.GetPlanById(planId);
-        if (plan == null)
-        {
-          return Json(new { success = false, message = "Không tìm thấy kế hoạch!" });
-        }
-        if (plan.Status == "Completed")
-        {
-          return Json(new { success = false, message = "Kế hoạch đã hoàn thành rồi!" });
-        }
+        if (plan == null) return Json(new { success = false, message = "Không tìm thấy kế hoạch!" });
+        if (plan.Status == "Completed") return Json(new { success = false, message = "Kế hoạch đã hoàn thành rồi!" });
+
         await _thPlanService.ConfirmPlanAsync(planId);
         var planCells = await _thPlanService.GetPlanCellsByPlanId(planId);
+
         int totalColumnIndex = -1;
-        var validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
         var headerCells = planCells.Where(pc => pc.RowId == 1 && !pc.IsDeleted && !pc.IsHidden).ToList();
+
         foreach (var cell in headerCells)
         {
           if (cell.Name.ToLower().Contains("tổng cộng") || cell.Name.ToLower().Contains("total"))
-          {
             totalColumnIndex = cell.ColumnId - 1;
-          }
-          if (validColumns.Contains(cell.Name.Trim()) && !validColumnIndices.Contains(cell.ColumnId - 1))
-          {
-            validColumnIndices.Add(cell.ColumnId - 1);
-          }
         }
-        validColumnIndices = validColumnIndices.OrderBy(x => x).Distinct().ToList();
+
+        var validColumnIndices = headerCells
+            .Where(c => validColumns.Contains(c.Name.Trim()))
+            .Select(c => c.ColumnId - 1)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         int maxRow = planCells.Any() ? planCells.Max(pc => pc.RowId) : 0;
         int maxCol = planCells.Any() ? planCells.Max(pc => pc.ColumnId) : 0;
-        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) = PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol);
+
+        var (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells) =
+            PrepareTableData(planCells, totalColumnIndex, maxRow, maxCol, validColumnIndices);
+
         return Json(new
         {
           success = true,
-          message = "✅ KẾ HOẠCH ĐÃ HOÀN THÀNH!",
-          data = new
-          {
-            tableData,
-            formats = cellFormats,
-            mergedCells,
-            rowHeights,
-            colWidths,
-            totalColumnIndex,
-            validColumnIndices,
-            lockedCells
-          }
+          message = "KẾ HOẠCH ĐÃ HOÀN THÀNH!",
+          data = new { tableData, formats = cellFormats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells }
         });
       }
       catch (Exception ex)
@@ -632,28 +481,35 @@ namespace PLANMHE.Controllers
 
     private async Task UpdateRowLockStatus(int planId, List<PlanCell> planCells, int totalColumnIndex, List<int> validColumnIndices, int maxRow)
     {
+      var cellLookup = planCells.ToLookup(pc => (pc.RowId, pc.ColumnId));
       var cellsToUpdate = new List<PlanCell>();
+
       for (int row = 2; row <= maxRow; row++)
       {
-        var currentTotalCell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == totalColumnIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
-        var aboveTotalCell = planCells.FirstOrDefault(pc => pc.RowId == row - 1 && pc.ColumnId == totalColumnIndex + 1 && !pc.IsDeleted && !pc.IsHidden);
-        double currentTotal = currentTotalCell != null && double.TryParse(currentTotalCell.Name?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double c) ? c : 0;
-        double aboveTotal = aboveTotalCell != null && double.TryParse(aboveTotalCell.Name?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double a) ? a : 0;
-        var sampleDataCell = planCells.FirstOrDefault(pc => pc.RowId == row && validColumnIndices.Contains(pc.ColumnId - 1) && !pc.IsDeleted && !pc.IsHidden);
-        bool isCurrentOpen = sampleDataCell != null && !sampleDataCell.IsLocked;
-        if (isCurrentOpen && currentTotal >= aboveTotal && aboveTotalCell != null)
+        var currentTotalCell = cellLookup[(row, totalColumnIndex + 1)].FirstOrDefault();
+        var aboveTotalCell = cellLookup[(row - 1, totalColumnIndex + 1)].FirstOrDefault();
+
+        double currentTotal = ParseDouble(currentTotalCell?.Name);
+        double aboveTotal = ParseDouble(aboveTotalCell?.Name);
+
+        var sampleDataCell = validColumnIndices
+            .Select(colIdx => cellLookup[(row, colIdx + 1)].FirstOrDefault())
+            .FirstOrDefault(c => c != null && !c.IsLocked);
+
+        if (sampleDataCell != null && currentTotal >= aboveTotal && aboveTotalCell != null)
         {
-          var rowCells = planCells.Where(pc => pc.RowId == row && !pc.IsDeleted && !pc.IsHidden).ToList();
-          foreach (var cell in rowCells)
+          // Khóa toàn bộ dòng hiện tại
+          foreach (var cell in planCells.Where(pc => pc.RowId == row && !pc.IsDeleted && !pc.IsHidden))
           {
             cell.IsLocked = true;
             cellsToUpdate.Add(cell);
           }
-          int nextRowToOpen = row + 2;
-          if (nextRowToOpen <= maxRow)
+
+          // Mở dòng +2
+          int nextRow = row + 2;
+          if (nextRow <= maxRow)
           {
-            var nextRowCells = planCells.Where(pc => pc.RowId == nextRowToOpen && !pc.IsDeleted && !pc.IsHidden && pc.ColumnId != totalColumnIndex + 1).ToList();
-            foreach (var cell in nextRowCells)
+            foreach (var cell in planCells.Where(pc => pc.RowId == nextRow && !pc.IsDeleted && !pc.IsHidden && pc.ColumnId != totalColumnIndex + 1))
             {
               cell.IsLocked = false;
               cellsToUpdate.Add(cell);
@@ -661,77 +517,122 @@ namespace PLANMHE.Controllers
           }
         }
       }
+
       foreach (var cell in cellsToUpdate)
-      {
         await _thPlanService.UpdatePlanCellAsync(cell);
-      }
     }
 
-    private (List<List<object>> tableData, List<Dictionary<string, string>> cellFormats, List<Dictionary<string, object>> mergedCells, List<double> rowHeights, List<double> colWidths, List<Dictionary<string, object>> lockedCells) PrepareTableData(List<PlanCell> planCells, int totalColumnIndex, int maxRow, int maxCol)
+    // Helper
+    private double ParseDouble(string text) =>
+        double.TryParse(text?.Replace(",", "."), System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out double val) ? val : 0;
+
+    private (List<List<object>> tableData, List<Dictionary<string, string>> cellFormats,
+         List<Dictionary<string, object>> mergedCells, List<double> rowHeights,
+         List<double> colWidths, List<Dictionary<string, object>> lockedCells)
+    PrepareTableData(List<PlanCell> planCells, int totalColumnIndex, int maxRow, int maxCol, List<int> validColumnIndices)
+{
+    var tableData = new List<List<object>>();
+    var cellFormats = new List<Dictionary<string, string>>();
+    var mergedCells = new List<Dictionary<string, object>>();
+    var rowHeights = new List<double>();
+    var colWidths = new List<double>();
+    var lockedCells = new List<Dictionary<string, object>>();
+
+    if (maxRow <= 0 || maxCol <= 0)
+        return (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells);
+
+    // 1. XÂY TABLEDATA
+    for (int row = 1; row <= maxRow; row++)
     {
-      var tableData = new List<List<object>>();
-      var cellFormats = new List<Dictionary<string, string>>();
-      var mergedCells = new List<Dictionary<string, object>>();
-      var rowHeights = new List<double>();
-      var colWidths = new List<double>();
-      var lockedCells = new List<Dictionary<string, object>>();
-      if (maxRow > 0 && maxCol > 0)
-      {
-        for (int row = 1; row <= maxRow; row++)
+        var rowData = new List<object>();
+        for (int col = 1; col <= maxCol; col++)
         {
-          var rowData = new List<object>();
-          for (int col = 1; col <= maxCol; col++)
-          {
             var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
-            rowData.Add(cell?.Name?.Trim() ?? (col == totalColumnIndex + 1 ? "0" : ""));
-          }
-          tableData.Add(rowData);
+            rowData.Add(cell?.Name?.Trim() ?? (col - 1 == totalColumnIndex ? "0" : ""));
         }
-        for (int row = 1; row <= maxRow; row++)
-        {
-          var rowFormats = new Dictionary<string, string>();
-          for (int col = 1; col <= maxCol; col++)
-          {
-            var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
-            var css = new List<string>
-                        {
-                            $"background-color: #{cell?.BackgroundColor ?? (col - 1 == totalColumnIndex ? "f0f0f0" : "ffffff")}",
-                            $"color: #{cell?.FontColor ?? "000000"}",
-                            $"font-size: {cell?.FontSize ?? "14px"}",
-                            $"font-weight: {cell?.FontWeight ?? "normal"}",
-                            $"text-align: {cell?.TextAlign ?? (cell?.Rowspan > 1 || cell?.Colspan > 1 ? "center" : (col - 1 == totalColumnIndex ? "center" : "left"))}",
-                            $"font-family: {cell?.FontFamily ?? "Segoe UI"}"
-                        };
-            if (col - 1 == totalColumnIndex || (cell != null && cell.IsLocked))
-            {
-              css.Add("cursor: not-allowed");
-            }
-            rowFormats[$"col{col}"] = string.Join("; ", css);
-          }
-          cellFormats.Add(rowFormats);
-        }
-        foreach (var cell in planCells.Where(pc => (pc.Rowspan > 1 || pc.Colspan > 1) && !pc.IsDeleted && !pc.IsHidden))
-        {
-          mergedCells.Add(new Dictionary<string, object>
-                    {
-                        { "startRow", cell.RowId },
-                        { "startCol", cell.ColumnId },
-                        { "rowSpan", cell.Rowspan ?? 1 },
-                        { "colSpan", cell.Colspan ?? 1 }
-                    });
-        }
-        foreach (var cell in planCells.Where(pc => pc.IsLocked && !pc.IsDeleted && !pc.IsHidden))
-        {
-          lockedCells.Add(new Dictionary<string, object>
-                    {
-                        { "row", cell.RowId },
-                        { "col", cell.ColumnId }
-                    });
-        }
-        rowHeights.AddRange(planCells.GroupBy(pc => pc.RowId).Select(g => g.First().RowHeight > 0 ? g.First().RowHeight : 30));
-        colWidths.AddRange(planCells.GroupBy(pc => pc.ColumnId).Select(g => g.First().ColWidth > 0 ? g.First().ColWidth : 60));
-      }
-      return (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells);
+        tableData.Add(rowData);
     }
+
+    // 2. TÔ MÀU TOÀN DÒNG NẾU CÓ 1 Ô NGÀY MỞ
+    for (int row = 1; row <= maxRow; row++)
+    {
+        var rowFormats = new Dictionary<string, string>();
+        bool isRowOpen = false;
+
+        // Kiểm tra: có ít nhất 1 ô ngày (Thứ 4 → Thứ 3) đang mở không?
+        for (int col = 1; col <= maxCol; col++)
+        {
+            var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
+            bool isDataCell = row > 1 && validColumnIndices.Contains(col - 1);
+            bool isCellOpen = cell != null && !cell.IsLocked;
+
+            if (isDataCell && isCellOpen)
+            {
+                isRowOpen = true;
+                break;
+            }
+        }
+
+        // Áp dụng cho TẤT CẢ ô trong dòng
+        for (int col = 1; col <= maxCol; col++)
+        {
+            var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
+
+            // MÀU NỀN: Dòng mở → #f0f0f0 | Cột tổng → #f0f0f0 | Còn lại → màu cell
+            string bgColor = isRowOpen ? "f0f0f0" 
+                             : (cell?.BackgroundColor ?? (col - 1 == totalColumnIndex ? "f0f0f0" : "ffffff"));
+
+            var css = new List<string>
+            {
+                $"background-color: #{bgColor}",
+                $"color: #{cell?.FontColor ?? "000000"}",
+                $"font-size: {cell?.FontSize ?? "14px"}",
+                $"font-weight: {cell?.FontWeight ?? "normal"}",
+                $"text-align: {cell?.TextAlign ?? (cell?.Rowspan > 1 || cell?.Colspan > 1 ? "center" : (col - 1 == totalColumnIndex ? "center" : "left"))}",
+                $"font-family: {cell?.FontFamily ?? "Segoe UI"}"
+            };
+
+            if (col - 1 == totalColumnIndex || (cell?.IsLocked ?? false))
+                css.Add("cursor: not-allowed");
+
+            rowFormats[$"col{col}"] = string.Join("; ", css);
+        }
+        cellFormats.Add(rowFormats);
+    }
+
+    // 3. MERGED + LOCKED + SIZE (giữ nguyên)
+    foreach (var cell in planCells.Where(pc => (pc.Rowspan > 1 || pc.Colspan > 1) && !pc.IsDeleted && !pc.IsHidden))
+    {
+        mergedCells.Add(new Dictionary<string, object>
+        {
+            { "startRow", cell.RowId },
+            { "startCol", cell.ColumnId },
+            { "rowSpan", cell.Rowspan ?? 1 },
+            { "colSpan", cell.Colspan ?? 1 }
+        });
+    }
+
+    foreach (var cell in planCells.Where(pc => pc.IsLocked && !pc.IsDeleted && !pc.IsHidden))
+    {
+        lockedCells.Add(new Dictionary<string, object>
+        {
+            { "row", cell.RowId },
+            { "col", cell.ColumnId }
+        });
+    }
+
+    rowHeights.AddRange(planCells
+        .GroupBy(pc => pc.RowId)
+        .OrderBy(g => g.Key)
+        .Select(g => g.First().RowHeight > 0 ? g.First().RowHeight : 30));
+
+    colWidths.AddRange(planCells
+        .GroupBy(pc => pc.ColumnId)
+        .OrderBy(g => g.Key)
+        .Select(g => g.First().ColWidth > 0 ? g.First().ColWidth : 60));
+
+    return (tableData, cellFormats, mergedCells, rowHeights, colWidths, lockedCells);
+}
   }
 }

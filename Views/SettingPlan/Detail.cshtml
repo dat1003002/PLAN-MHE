@@ -320,256 +320,750 @@
 			});
 		});
 
-		function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
-			var $table = $('#excelTable');
-			var $tbody = $table.find('tbody').empty();
-			var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 64), 60));
-			var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
-			var skipCells = {};
-			pixelColWidths.unshift(50);
-
-			var $fragment = $(document.createDocumentFragment());
-			$.each(data, function (rowIndex, rowData) {
-				var rowHeightPx = pixelRowHeights[rowIndex] || 30;
-				var $tr = $('<tr>').css({
-					'height': rowHeightPx + 'px',
-					'min-height': rowHeightPx + 'px',
-					'max-height': rowHeightPx + 'px'
-				});
-				var $checkboxTd = $('<td>').css({
-					'width': '50px',
-					'min-width': '50px',
-					'max-width': '50px',
-					'height': rowHeightPx + 'px',
-					'min-height': rowHeightPx + 'px',
-					'max-height': rowHeightPx + 'px',
-					'box-sizing': 'border-box',
-					'text-align': 'center',
-					'vertical-align': 'middle'
-				});
-				var $checkbox = $('<input>').attr({
-					'type': 'checkbox',
-					'class': 'row-checkbox',
-					'data-row': rowIndex
-				});
-				$checkboxTd.append($checkbox);
-				$tr.append($checkboxTd);
-
-				$.each(rowData, function (colIndex, cellData) {
-					var cellKey = `${rowIndex}-${colIndex}`;
-					if (skipCells[cellKey]) return;
-					var $td = $('<td>').text(cellData || '').css({
-						'width': pixelColWidths[colIndex + 1] + 'px',
-						'min-width': pixelColWidths[colIndex + 1] + 'px',
-						'max-width': pixelColWidths[colIndex + 1] + 'px',
-						'height': rowHeightPx + 'px',
-						'min-height': rowHeightPx + 'px',
-						'max-height': rowHeightPx + 'px',
-						'box-sizing': 'border-box',
-						'overflow': 'visible',
-						'display': 'table-cell'
-					});
-					var css = formats[rowIndex] && formats[rowIndex][`col${colIndex + 1}`]
-						? formats[rowIndex][`col${colIndex + 1}`]
-						: `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 11pt; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: ${colIndex === totalColumnIndex ? 'Times New Roman' : 'Arial'}`;
-					var isMerged = false;
-					var hasRowSpan = false;
-					$.each(mergedCells, function (i, merge) {
-						if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
-							isMerged = true;
-							if (merge.rowSpan > 1) hasRowSpan = true;
-						}
-					});
-					if (isMerged) {
-						css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
-						if (!css.includes('text-align')) css += ';text-align: center';
-						if (hasRowSpan) {
-							css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
-							if (!css.includes('vertical-align')) css += ';vertical-align: middle';
-						}
-					}
-					if (colIndex === totalColumnIndex) {
-						css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
-						css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Times New Roman;');
-						css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
-						if (!css.includes('text-align')) css += ';text-align: center';
-						if (!css.includes('font-family')) css += ';font-family: Times New Roman';
-						if (!css.includes('color')) css += ';color: #000000';
-						css += ';background-color: #f0f0f0;cursor: not-allowed;';
-						$td.addClass('disabled-cell');
-					}
-					if (lockedCells[rowIndex] && lockedCells[rowIndex][`col${colIndex + 1}`]) {
-						css += ';cursor: not-allowed;';
-						$td.addClass('disabled-cell');
-					}
-					$td.css(css.split(';').reduce((obj, style) => {
-						const [key, value] = style.split(':').map(s => s.trim());
-						if (key && value) obj[key] = value;
-						return obj;
-					}, {}));
-					$td.attr('style', css);
-					$td.data('row', rowIndex).data('col', colIndex);
-					$.each(mergedCells, function (i, merge) {
-						if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
-							if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
-							if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
-							var mergedWidth = 0;
-							for (var c = 0; c < merge.colSpan; c++) {
-								mergedWidth += pixelColWidths[colIndex + 1 + c] || 60;
-							}
-							$td.css({
-								'width': Math.round(mergedWidth) + 'px',
-								'min-width': Math.round(mergedWidth) + 'px',
-								'max-width': Math.round(mergedWidth) + 'px',
-								'height': (rowHeightPx * merge.rowSpan) + 'px',
-								'min-height': (rowHeightPx * merge.rowSpan) + 'px',
-								'max-height': (rowHeightPx * merge.rowSpan) + 'px'
-							});
-							for (var r = 0; r < merge.rowSpan; r++) {
-								for (var c = 0; c < merge.colSpan; c++) {
-									if (r === 0 && c === 0) continue;
-									skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
-								}
-							}
-						}
-					});
-					if (colIndex !== totalColumnIndex && (!lockedCells[rowIndex] || !lockedCells[rowIndex][`col${colIndex + 1}`])) {
-						$td.on('contextmenu', function (e) {
-							e.preventDefault();
-							selectedCell = { row: rowIndex, col: colIndex, element: $td };
-							$('#cellInfo').text(`Hàng: ${rowIndex + 1}, Cột: ${colIndex + 1}`);
-							const currentBgColor = $td.css('background-color') || '#ffffff';
-							$('#cellColor').val(rgbToHex(currentBgColor));
-							const modal = new bootstrap.Modal(document.getElementById('contextMenuModal'));
-							modal.show();
-							$('#saveCellChanges').off('click').on('click', function () {
-								if (!selectedCell) return;
-								const newColor = $('#cellColor').val().replace('#', '');
-								const rowIndex = selectedCell.row;
-								const colIndex = selectedCell.col;
-								if (colIndex === totalColumnIndex) {
-									alert('Không thể đổi màu ô trong cột tổng cộng.');
-									selectedCell.element.removeClass('selected-cell');
-									selectedCell = null;
-									modal.hide();
-									return;
-								}
-								const $td = selectedCell.element;
-								let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;
-								css = css.replace(/background-color:\s*#[0-9a-fA-F]+;/, `background-color: #${newColor};`);
-								css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
-								if (!css.includes('background-color')) css += `;background-color: #${newColor}`;
-								if (!css.includes('color')) css += ';color: #000000';
-								css = css.replace(/;?\s*cursor:\s*not-allowed;/, '');
-								$td.css(css.split(';').reduce((obj, style) => {
-									const [key, value] = style.split(':').map(s => s.trim());
-									if (key && value) obj[key] = value;
-									return obj;
-								}, {}));
-								$td.attr('style', css);
-								$td.removeClass('disabled-cell');
-								formats[rowIndex][`col${colIndex + 1}`] = css;
-								updateCell(rowIndex, colIndex, $td.text(), totalColumnIndex, validColumnIndices, newColor, $td);
-								selectedCell.element.removeClass('selected-cell');
-								selectedCell = null;
-								modal.hide();
-							});
-						});
-						$td.on('click', function (e) {
-							var $this = $(this);
-							if ($this.find('input').length > 0) return;
-							if (selectedCell) {
-								selectedCell.element.removeClass('selected-cell');
-							}
-							selectedCell = { row: rowIndex, col: colIndex, element: $this };
-							$this.addClass('selected-cell');
-							var currentText = $this.text() || '';
-							var currentBgColor = $this.css('background-color') || '#ffffff';
-							var cellPadding = parseFloat($this.css('padding') || 5);
-							var isMerged = $this.attr('rowspan') || $this.attr('colspan');
-							var hasRowSpan = $this.attr('rowspan') > 1;
-							var $input = $('<input>').attr('type', 'text').val(currentText).css({
-								'width': '100%',
-								'height': '100%',
-								'box-sizing': 'border-box',
-								'padding': cellPadding + 'px',
-								'font-size': $this.css('font-size'),
-								'font-family': $this.css('font-family'),
-								'font-weight': $this.css('font-weight'),
-								'text-align': isMerged ? 'center' : $this.css('text-align'),
-								'color': '#000000',
-								'background-color': currentBgColor,
-								'border': '1px solid #ccc',
-								'margin': 0,
-								'display': 'block',
-								'outline': 'none',
-								'white-space': 'normal',
-								'word-wrap': 'break-word'
-							});
-							$this.empty().append($input);
-							$input.focus();
-							var debouncedUpdate = debounce(function (newValue) {
-								var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
-								if (safeValue !== currentText) {
-									updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
-								}
-								$this.text(safeValue);
-								$this.css({
-									'background-color': currentBgColor,
-									'color': '#000000',
-									'text-align': isMerged ? 'center' : $this.css('text-align'),
-									'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
-									'overflow': 'visible',
-									'display': 'table-cell'
-								});
-								$input.remove();
-								$this.addClass('selected-cell');
-							}, 200);
-							$input.on('input', function () {
-								var newValue = $(this).val() || '';
-								debouncedUpdate(newValue);
-							});
-							$input.on('blur keypress', function (e) {
-								if (e.type === 'blur' || e.which === 13) {
-									var newValue = $(this).val() || '';
-									var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
-									if (safeValue !== currentText) {
-										updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
-									}
-									$this.text(safeValue);
-									$this.css({
-										'background-color': currentBgColor,
-										'color': '#000000',
-										'text-align': isMerged ? 'center' : $this.css('text-align'),
-										'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
-										'overflow': 'visible',
-										'display': 'table-cell'
-									});
-									$this.removeClass('selected-cell');
-									$(this).remove();
-								}
-							});
-						});
-					}
-					$tr.append($td);
-				});
-				$fragment.append($tr);
-			});
-			$tbody.append($fragment);
-			$table.css({
-				'table-layout': 'fixed',
-				'width': 'auto',
-				'border-collapse': 'collapse',
-				'display': 'table !important'
-			}).show();
-			if (selectedCell) {
-				const $newSelectedTd = $('#excelTable tbody tr').eq(selectedCell.row).find('td').eq(selectedCell.col + 1);
-				$newSelectedTd.addClass('selected-cell');
+			function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
+	  var $table = $('#excelTable');
+	  var $tbody = $table.find('tbody').empty();
+	  var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 64), 60));
+	  var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+	  var skipCells = {};
+	  pixelColWidths.unshift(50);
+	  var $fragment = $(document.createDocumentFragment());
+	  $.each(data, function (rowIndex, rowData) {
+		var rowHeightPx = pixelRowHeights[rowIndex] || 30;
+		var $tr = $('<tr>').css({
+		  'height': rowHeightPx + 'px',
+		  'min-height': rowHeightPx + 'px',
+		  'max-height': rowHeightPx + 'px'
+		});
+		var $checkboxTd = $('<td>').css({
+		  'width': '50px',
+		  'min-width': '50px',
+		  'max-width': '50px',
+		  'height': rowHeightPx + 'px',
+		  'min-height': rowHeightPx + 'px',
+		  'max-height': rowHeightPx + 'px',
+		  'box-sizing': 'border-box',
+		  'text-align': 'center',
+		  'vertical-align': 'middle'
+		});
+		var $checkbox = $('<input>').attr({
+		  'type': 'checkbox',
+		  'class': 'row-checkbox',
+		  'data-row': rowIndex
+		});
+		$checkboxTd.append($checkbox);
+		$tr.append($checkboxTd);
+		$.each(rowData, function (colIndex, cellData) {
+		  var cellKey = `${rowIndex}-${colIndex}`;
+		  if (skipCells[cellKey]) return;
+		  var $td = $('<td>').text(cellData || '').css({
+			'width': pixelColWidths[colIndex + 1] + 'px',
+			'min-width': pixelColWidths[colIndex + 1] + 'px',
+			'max-width': pixelColWidths[colIndex + 1] + 'px',
+			'height': rowHeightPx + 'px',
+			'min-height': rowHeightPx + 'px',
+			'max-height': rowHeightPx + 'px',
+			'box-sizing': 'border-box',
+			'overflow': 'visible',
+			'display': 'table-cell'
+		  });
+		  var css = formats[rowIndex] && formats[rowIndex][`col${colIndex + 1}`]
+			? formats[rowIndex][`col${colIndex + 1}`]
+			: `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;  // FALLBACK TỪ DB/EXCEL
+		  var isMerged = false;
+		  var hasRowSpan = false;
+		  $.each(mergedCells, function (i, merge) {
+			if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+			  isMerged = true;
+			  if (merge.rowSpan > 1) hasRowSpan = true;
 			}
-			selectedRows.forEach(rowIndex => {
-				$('#excelTable tbody tr').eq(rowIndex).find('.row-checkbox').prop('checked', true);
+		  });
+		  if (isMerged) {
+			css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+			if (!css.includes('text-align')) css += ';text-align: center';
+			if (hasRowSpan) {
+			  css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
+			  if (!css.includes('vertical-align')) css += ';vertical-align: middle';
+			}
+		  }
+		  if (colIndex === totalColumnIndex) {
+			css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+			css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Times New Roman;');
+			if (!css.includes('text-align')) css += ';text-align: center';
+			if (!css.includes('font-family')) css += ';font-family: Times New Roman';
+			// BỎ OVERRIDE COLOR: GIỮ FONT COLOR TỪ EXCEL/DB (KHÔNG HARDCODE #000000)
+			css += ';cursor: not-allowed;';  // CHỈ THÊM CURSOR CHO TOTAL
+		  }
+		  var isLocked = lockedCells[rowIndex] && lockedCells[rowIndex][`col${colIndex + 1}`];
+		  if (isLocked) {
+			css += ';cursor: not-allowed;';  // CHỈ CURSOR CHO LOCKED
+		  }
+		  $td.css(css.split(';').reduce((obj, style) => {
+			const [key, value] = style.split(':').map(s => s.trim());
+			if (key && value) obj[key] = value;
+			return obj;
+		  }, {}));
+		  $td.attr('style', css);
+		  $td.data('row', rowIndex).data('col', colIndex);
+		  $.each(mergedCells, function (i, merge) {
+			if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+			  if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
+			  if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
+			  var mergedWidth = 0;
+			  for (var c = 0; c < merge.colSpan; c++) {
+				mergedWidth += pixelColWidths[colIndex + 1 + c] || 60;
+			  }
+			  $td.css({
+				'width': Math.round(mergedWidth) + 'px',
+				'min-width': Math.round(mergedWidth) + 'px',
+				'max-width': Math.round(mergedWidth) + 'px',
+				'height': (rowHeightPx * merge.rowSpan) + 'px',
+				'min-height': (rowHeightPx * merge.rowSpan) + 'px',
+				'max-height': (rowHeightPx * merge.rowSpan) + 'px'
+			  });
+			  for (var r = 0; r < merge.rowSpan; r++) {
+				for (var c = 0; c < merge.colSpan; c++) {
+				  if (r === 0 && c === 0) continue;
+				  skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
+				}
+			  }
+			}
+		  });
+		  if (colIndex !== totalColumnIndex && !isLocked) {
+			$td.on('contextmenu', function (e) {
+			  e.preventDefault();
+			  selectedCell = { row: rowIndex, col: colIndex, element: $td };
+			  $('#cellInfo').text(`Hàng: ${rowIndex + 1}, Cột: ${colIndex + 1}`);
+			  const currentBgColor = $td.css('background-color') || '#ffffff';
+			  $('#cellColor').val(rgbToHex(currentBgColor));
+			  const modal = new bootstrap.Modal(document.getElementById('contextMenuModal'));
+			  modal.show();
+			  $('#saveCellChanges').off('click').on('click', function () {
+				if (!selectedCell) return;
+				const newColor = $('#cellColor').val().replace('#', '');
+				const rowIndex = selectedCell.row;
+				const colIndex = selectedCell.col;
+				if (colIndex === totalColumnIndex) {
+				  alert('Không thể đổi màu ô trong cột tổng cộng.');
+				  selectedCell.element.removeClass('selected-cell');
+				  selectedCell = null;
+				  modal.hide();
+				  return;
+				}
+				const $td = selectedCell.element;
+				let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;
+				css = css.replace(/background-color:\s*#[0-9a-fA-F]+;/, `background-color: #${newColor};`);
+				css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
+				if (!css.includes('background-color')) css += `;background-color: #${newColor}`;
+				if (!css.includes('color')) css += ';color: #000000';
+				css = css.replace(/;?\s*cursor:\s*not-allowed;/, '');
+				$td.css(css.split(';').reduce((obj, style) => {
+				  const [key, value] = style.split(':').map(s => s.trim());
+				  if (key && value) obj[key] = value;
+				  return obj;
+				}, {}));
+				$td.attr('style', css);
+				$td.removeClass('disabled-cell');
+				formats[rowIndex][`col${colIndex + 1}`] = css;
+				updateCell(rowIndex, colIndex, $td.text(), totalColumnIndex, validColumnIndices, newColor, $td);
+				selectedCell.element.removeClass('selected-cell');
+				selectedCell = null;
+				modal.hide();
+			  });
 			});
-		}
+			$td.on('click', function (e) {
+			  var $this = $(this);
+			  if ($this.find('input').length > 0) return;
+			  if (selectedCell) {
+				selectedCell.element.removeClass('selected-cell');
+			  }
+			  selectedCell = { row: rowIndex, col: colIndex, element: $this };
+			  $this.addClass('selected-cell');
+			  var currentText = $this.text() || '';
+			  var currentBgColor = $this.css('background-color') || '#ffffff';
+			  var cellPadding = parseFloat($this.css('padding') || 5);
+			  var isMerged = $this.attr('rowspan') || $this.attr('colspan');
+			  var hasRowSpan = $this.attr('rowspan') > 1;
+			  var $input = $('<input>').attr('type', 'text').val(currentText).css({
+				'width': '100%',
+				'height': '100%',
+				'box-sizing': 'border-box',
+				'padding': cellPadding + 'px',
+				'font-size': $this.css('font-size'),
+				'font-family': $this.css('font-family'),
+				'font-weight': $this.css('font-weight'),
+				'text-align': isMerged ? 'center' : $this.css('text-align'),
+				'color': '#000000',
+				'background-color': currentBgColor,
+				'border': '1px solid #ccc',
+				'margin': 0,
+				'display': 'block',
+				'outline': 'none',
+				'white-space': 'normal',
+				'word-wrap': 'break-word'
+			  });
+			  $this.empty().append($input);
+			  $input.focus();
+			  var debouncedUpdate = debounce(function (newValue) {
+				var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+				if (safeValue !== currentText) {
+				  updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+				}
+				$this.text(safeValue);
+				$this.css({
+				  'background-color': currentBgColor,
+				  'color': '#000000',
+				  'text-align': isMerged ? 'center' : $this.css('text-align'),
+				  'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+				  'overflow': 'visible',
+				  'display': 'table-cell'
+				});
+				$input.remove();
+				$this.addClass('selected-cell');
+			  }, 200);
+			  $input.on('input', function () {
+				var newValue = $(this).val() || '';
+				debouncedUpdate(newValue);
+			  });
+			  $input.on('blur keypress', function (e) {
+				if (e.type === 'blur' || e.which === 13) {
+				  var newValue = $(this).val() || '';
+				  var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+				  if (safeValue !== currentText) {
+					updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+				  }
+				  $this.text(safeValue);
+				  $this.css({
+					'background-color': currentBgColor,
+					'color': '#000000',
+					'text-align': isMerged ? 'center' : $this.css('text-align'),
+					'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+					'overflow': 'visible',
+					'display': 'table-cell'
+				  });
+				  $this.removeClass('selected-cell');
+				  $(this).remove();
+				}
+			  });
+			});
+		  } else {
+			$td.css('pointer-events', 'none');  // CHẶN CHO TOTAL/LOCKED
+		  }
+		  $tr.append($td);
+		});
+		$fragment.append($tr);
+	  });
+	  $tbody.append($fragment);
+	  $table.css({
+		'table-layout': 'fixed',
+		'width': 'auto',
+		'border-collapse': 'collapse',
+		'display': 'table !important'
+	  }).show();
+	  if (selectedCell) {
+		const $newSelectedTd = $('#excelTable tbody tr').eq(selectedCell.row).find('td').eq(selectedCell.col + 1);
+		$newSelectedTd.addClass('selected-cell');
+	  }
+	  selectedRows.forEach(rowIndex => {
+		$('#excelTable tbody tr').eq(rowIndex).find('.row-checkbox').prop('checked', true);
+	  });
+	}
+		function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
+	  var $table = $('#excelTable');
+	  var $tbody = $table.find('tbody').empty();
+	  var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 64), 60));
+	  var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+	  var skipCells = {};
+	  pixelColWidths.unshift(50);
+	  var $fragment = $(document.createDocumentFragment());
+	  $.each(data, function (rowIndex, rowData) {
+		var rowHeightPx = pixelRowHeights[rowIndex] || 30;
+		var $tr = $('<tr>').css({
+		  'height': rowHeightPx + 'px',
+		  'min-height': rowHeightPx + 'px',
+		  'max-height': rowHeightPx + 'px'
+		});
+		var $checkboxTd = $('<td>').css({
+		  'width': '50px',
+		  'min-width': '50px',
+		  'max-width': '50px',
+		  'height': rowHeightPx + 'px',
+		  'min-height': rowHeightPx + 'px',
+		  'max-height': rowHeightPx + 'px',
+		  'box-sizing': 'border-box',
+		  'text-align': 'center',
+		  'vertical-align': 'middle'
+		});
+		var $checkbox = $('<input>').attr({
+		  'type': 'checkbox',
+		  'class': 'row-checkbox',
+		  'data-row': rowIndex
+		});
+		$checkboxTd.append($checkbox);
+		$tr.append($checkboxTd);
+		$.each(rowData, function (colIndex, cellData) {
+		  var cellKey = `${rowIndex}-${colIndex}`;
+		  if (skipCells[cellKey]) return;
+		  var $td = $('<td>').text(cellData || '').css({
+			'width': pixelColWidths[colIndex + 1] + 'px',
+			'min-width': pixelColWidths[colIndex + 1] + 'px',
+			'max-width': pixelColWidths[colIndex + 1] + 'px',
+			'height': rowHeightPx + 'px',
+			'min-height': rowHeightPx + 'px',
+			'max-height': rowHeightPx + 'px',
+			'box-sizing': 'border-box',
+			'overflow': 'visible',
+			'display': 'table-cell'
+		  });
+		  var css = formats[rowIndex] && formats[rowIndex][`col${colIndex + 1}`]
+			? formats[rowIndex][`col${colIndex + 1}`]
+			: `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;  // FALLBACK TỪ DB/EXCEL
+		  var isMerged = false;
+		  var hasRowSpan = false;
+		  $.each(mergedCells, function (i, merge) {
+			if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+			  isMerged = true;
+			  if (merge.rowSpan > 1) hasRowSpan = true;
+			}
+		  });
+		  if (isMerged) {
+			css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+			if (!css.includes('text-align')) css += ';text-align: center';
+			if (hasRowSpan) {
+			  css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
+			  if (!css.includes('vertical-align')) css += ';vertical-align: middle';
+			}
+		  }
+		  if (colIndex === totalColumnIndex) {
+			css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+			css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Times New Roman;');
+			if (!css.includes('text-align')) css += ';text-align: center';
+			if (!css.includes('font-family')) css += ';font-family: Times New Roman';
+			// BỎ OVERRIDE COLOR: GIỮ FONT COLOR TỪ EXCEL/DB (KHÔNG HARDCODE #000000)
+			css += ';cursor: not-allowed;';  // CHỈ THÊM CURSOR CHO TOTAL
+		  }
+		  var isLocked = lockedCells[rowIndex] && lockedCells[rowIndex][`col${colIndex + 1}`];
+		  if (isLocked) {
+			css += ';cursor: not-allowed;';  // CHỈ CURSOR CHO LOCKED
+		  }
+		  $td.css(css.split(';').reduce((obj, style) => {
+			const [key, value] = style.split(':').map(s => s.trim());
+			if (key && value) obj[key] = value;
+			return obj;
+		  }, {}));
+		  $td.attr('style', css);
+		  $td.data('row', rowIndex).data('col', colIndex);
+		  $.each(mergedCells, function (i, merge) {
+			if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+			  if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
+			  if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
+			  var mergedWidth = 0;
+			  for (var c = 0; c < merge.colSpan; c++) {
+				mergedWidth += pixelColWidths[colIndex + 1 + c] || 60;
+			  }
+			  $td.css({
+				'width': Math.round(mergedWidth) + 'px',
+				'min-width': Math.round(mergedWidth) + 'px',
+				'max-width': Math.round(mergedWidth) + 'px',
+				'height': (rowHeightPx * merge.rowSpan) + 'px',
+				'min-height': (rowHeightPx * merge.rowSpan) + 'px',
+				'max-height': (rowHeightPx * merge.rowSpan) + 'px'
+			  });
+			  for (var r = 0; r < merge.rowSpan; r++) {
+				for (var c = 0; c < merge.colSpan; c++) {
+				  if (r === 0 && c === 0) continue;
+				  skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
+				}
+			  }
+			}
+		  });
+		  if (colIndex !== totalColumnIndex && !isLocked) {
+			$td.on('contextmenu', function (e) {
+			  e.preventDefault();
+			  selectedCell = { row: rowIndex, col: colIndex, element: $td };
+			  $('#cellInfo').text(`Hàng: ${rowIndex + 1}, Cột: ${colIndex + 1}`);
+			  const currentBgColor = $td.css('background-color') || '#ffffff';
+			  $('#cellColor').val(rgbToHex(currentBgColor));
+			  const modal = new bootstrap.Modal(document.getElementById('contextMenuModal'));
+			  modal.show();
+			  $('#saveCellChanges').off('click').on('click', function () {
+				if (!selectedCell) return;
+				const newColor = $('#cellColor').val().replace('#', '');
+				const rowIndex = selectedCell.row;
+				const colIndex = selectedCell.col;
+				if (colIndex === totalColumnIndex) {
+				  alert('Không thể đổi màu ô trong cột tổng cộng.');
+				  selectedCell.element.removeClass('selected-cell');
+				  selectedCell = null;
+				  modal.hide();
+				  return;
+				}
+				const $td = selectedCell.element;
+				let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;
+				css = css.replace(/background-color:\s*#[0-9a-fA-F]+;/, `background-color: #${newColor};`);
+				css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
+				if (!css.includes('background-color')) css += `;background-color: #${newColor}`;
+				if (!css.includes('color')) css += ';color: #000000';
+				css = css.replace(/;?\s*cursor:\s*not-allowed;/, '');
+				$td.css(css.split(';').reduce((obj, style) => {
+				  const [key, value] = style.split(':').map(s => s.trim());
+				  if (key && value) obj[key] = value;
+				  return obj;
+				}, {}));
+				$td.attr('style', css);
+				$td.removeClass('disabled-cell');
+				formats[rowIndex][`col${colIndex + 1}`] = css;
+				updateCell(rowIndex, colIndex, $td.text(), totalColumnIndex, validColumnIndices, newColor, $td);
+				selectedCell.element.removeClass('selected-cell');
+				selectedCell = null;
+				modal.hide();
+			  });
+			});
+			$td.on('click', function (e) {
+			  var $this = $(this);
+			  if ($this.find('input').length > 0) return;
+			  if (selectedCell) {
+				selectedCell.element.removeClass('selected-cell');
+			  }
+			  selectedCell = { row: rowIndex, col: colIndex, element: $this };
+			  $this.addClass('selected-cell');
+			  var currentText = $this.text() || '';
+			  var currentBgColor = $this.css('background-color') || '#ffffff';
+			  var cellPadding = parseFloat($this.css('padding') || 5);
+			  var isMerged = $this.attr('rowspan') || $this.attr('colspan');
+			  var hasRowSpan = $this.attr('rowspan') > 1;
+			  var $input = $('<input>').attr('type', 'text').val(currentText).css({
+				'width': '100%',
+				'height': '100%',
+				'box-sizing': 'border-box',
+				'padding': cellPadding + 'px',
+				'font-size': $this.css('font-size'),
+				'font-family': $this.css('font-family'),
+				'font-weight': $this.css('font-weight'),
+				'text-align': isMerged ? 'center' : $this.css('text-align'),
+				'color': '#000000',
+				'background-color': currentBgColor,
+				'border': '1px solid #ccc',
+				'margin': 0,
+				'display': 'block',
+				'outline': 'none',
+				'white-space': 'normal',
+				'word-wrap': 'break-word'
+			  });
+			  $this.empty().append($input);
+			  $input.focus();
+			  var debouncedUpdate = debounce(function (newValue) {
+				var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+				if (safeValue !== currentText) {
+				  updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+				}
+				$this.text(safeValue);
+				$this.css({
+				  'background-color': currentBgColor,
+				  'color': '#000000',
+				  'text-align': isMerged ? 'center' : $this.css('text-align'),
+				  'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+				  'overflow': 'visible',
+				  'display': 'table-cell'
+				});
+				$input.remove();
+				$this.addClass('selected-cell');
+			  }, 200);
+			  $input.on('input', function () {
+				var newValue = $(this).val() || '';
+				debouncedUpdate(newValue);
+			  });
+			  $input.on('blur keypress', function (e) {
+				if (e.type === 'blur' || e.which === 13) {
+				  var newValue = $(this).val() || '';
+				  var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+				  if (safeValue !== currentText) {
+					updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+				  }
+				  $this.text(safeValue);
+				  $this.css({
+					'background-color': currentBgColor,
+					'color': '#000000',
+					'text-align': isMerged ? 'center' : $this.css('text-align'),
+					'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+					'overflow': 'visible',
+					'display': 'table-cell'
+				  });
+				  $this.removeClass('selected-cell');
+				  $(this).remove();
+				}
+			  });
+			});
+		  } else {
+			$td.css('pointer-events', 'none');  // CHẶN CHO TOTAL/LOCKED
+		  }
+		  $tr.append($td);
+		});
+		$fragment.append($tr);
+	  });
+	  $tbody.append($fragment);
+	  $table.css({
+		'table-layout': 'fixed',
+		'width': 'auto',
+		'border-collapse': 'collapse',
+		'display': 'table !important'
+	  }).show();
+	  if (selectedCell) {
+		const $newSelectedTd = $('#excelTable tbody tr').eq(selectedCell.row).find('td').eq(selectedCell.col + 1);
+		$newSelectedTd.addClass('selected-cell');
+	  }
+	  selectedRows.forEach(rowIndex => {
+		$('#excelTable tbody tr').eq(rowIndex).find('.row-checkbox').prop('checked', true);
+	  });
+	}
+		function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
+	  var $table = $('#excelTable');
+	  var $tbody = $table.find('tbody').empty();
+	  var pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 64), 60));
+	  var pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
+	  var skipCells = {};
+	  pixelColWidths.unshift(50);
+	  var $fragment = $(document.createDocumentFragment());
+	  $.each(data, function (rowIndex, rowData) {
+		var rowHeightPx = pixelRowHeights[rowIndex] || 30;
+		var $tr = $('<tr>').css({
+		  'height': rowHeightPx + 'px',
+		  'min-height': rowHeightPx + 'px',
+		  'max-height': rowHeightPx + 'px'
+		});
+		var $checkboxTd = $('<td>').css({
+		  'width': '50px',
+		  'min-width': '50px',
+		  'max-width': '50px',
+		  'height': rowHeightPx + 'px',
+		  'min-height': rowHeightPx + 'px',
+		  'max-height': rowHeightPx + 'px',
+		  'box-sizing': 'border-box',
+		  'text-align': 'center',
+		  'vertical-align': 'middle'
+		});
+		var $checkbox = $('<input>').attr({
+		  'type': 'checkbox',
+		  'class': 'row-checkbox',
+		  'data-row': rowIndex
+		});
+		$checkboxTd.append($checkbox);
+		$tr.append($checkboxTd);
+		$.each(rowData, function (colIndex, cellData) {
+		  var cellKey = `${rowIndex}-${colIndex}`;
+		  if (skipCells[cellKey]) return;
+		  var $td = $('<td>').text(cellData || '').css({
+			'width': pixelColWidths[colIndex + 1] + 'px',
+			'min-width': pixelColWidths[colIndex + 1] + 'px',
+			'max-width': pixelColWidths[colIndex + 1] + 'px',
+			'height': rowHeightPx + 'px',
+			'min-height': rowHeightPx + 'px',
+			'max-height': rowHeightPx + 'px',
+			'box-sizing': 'border-box',
+			'overflow': 'visible',
+			'display': 'table-cell'
+		  });
+		  var css = formats[rowIndex] && formats[rowIndex][`col${colIndex + 1}`]
+			? formats[rowIndex][`col${colIndex + 1}`]
+			: `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;  // FALLBACK TỪ DB/EXCEL
+		  var isMerged = false;
+		  var hasRowSpan = false;
+		  $.each(mergedCells, function (i, merge) {
+			if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+			  isMerged = true;
+			  if (merge.rowSpan > 1) hasRowSpan = true;
+			}
+		  });
+		  if (isMerged) {
+			css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+			if (!css.includes('text-align')) css += ';text-align: center';
+			if (hasRowSpan) {
+			  css = css.replace(/vertical-align:\s*[^;]+;/, 'vertical-align: middle;');
+			  if (!css.includes('vertical-align')) css += ';vertical-align: middle';
+			}
+		  }
+		  if (colIndex === totalColumnIndex) {
+			css = css.replace(/text-align:\s*[^;]+;/, 'text-align: center;');
+			css = css.replace(/font-family:\s*[^;]+;/, 'font-family: Times New Roman;');
+			if (!css.includes('text-align')) css += ';text-align: center';
+			if (!css.includes('font-family')) css += ';font-family: Times New Roman';
+			// BỎ OVERRIDE COLOR: GIỮ FONT COLOR TỪ EXCEL/DB (KHÔNG HARDCODE #000000)
+			css += ';cursor: not-allowed;';  // CHỈ THÊM CURSOR CHO TOTAL
+		  }
+		  var isLocked = lockedCells[rowIndex] && lockedCells[rowIndex][`col${colIndex + 1}`];
+		  if (isLocked) {
+			css += ';cursor: not-allowed;';  // CHỈ CURSOR CHO LOCKED
+		  }
+		  $td.css(css.split(';').reduce((obj, style) => {
+			const [key, value] = style.split(':').map(s => s.trim());
+			if (key && value) obj[key] = value;
+			return obj;
+		  }, {}));
+		  $td.attr('style', css);
+		  $td.data('row', rowIndex).data('col', colIndex);
+		  $.each(mergedCells, function (i, merge) {
+			if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
+			  if (merge.rowSpan > 1) $td.attr('rowspan', merge.rowSpan);
+			  if (merge.colSpan > 1) $td.attr('colspan', merge.colSpan);
+			  var mergedWidth = 0;
+			  for (var c = 0; c < merge.colSpan; c++) {
+				mergedWidth += pixelColWidths[colIndex + 1 + c] || 60;
+			  }
+			  $td.css({
+				'width': Math.round(mergedWidth) + 'px',
+				'min-width': Math.round(mergedWidth) + 'px',
+				'max-width': Math.round(mergedWidth) + 'px',
+				'height': (rowHeightPx * merge.rowSpan) + 'px',
+				'min-height': (rowHeightPx * merge.rowSpan) + 'px',
+				'max-height': (rowHeightPx * merge.rowSpan) + 'px'
+			  });
+			  for (var r = 0; r < merge.rowSpan; r++) {
+				for (var c = 0; c < merge.colSpan; c++) {
+				  if (r === 0 && c === 0) continue;
+				  skipCells[`${rowIndex + r}-${colIndex + c}`] = true;
+				}
+			  }
+			}
+		  });
+		  if (colIndex !== totalColumnIndex && !isLocked) {
+			$td.on('contextmenu', function (e) {
+			  e.preventDefault();
+			  selectedCell = { row: rowIndex, col: colIndex, element: $td };
+			  $('#cellInfo').text(`Hàng: ${rowIndex + 1}, Cột: ${colIndex + 1}`);
+			  const currentBgColor = $td.css('background-color') || '#ffffff';
+			  $('#cellColor').val(rgbToHex(currentBgColor));
+			  const modal = new bootstrap.Modal(document.getElementById('contextMenuModal'));
+			  modal.show();
+			  $('#saveCellChanges').off('click').on('click', function () {
+				if (!selectedCell) return;
+				const newColor = $('#cellColor').val().replace('#', '');
+				const rowIndex = selectedCell.row;
+				const colIndex = selectedCell.col;
+				if (colIndex === totalColumnIndex) {
+				  alert('Không thể đổi màu ô trong cột tổng cộng.');
+				  selectedCell.element.removeClass('selected-cell');
+				  selectedCell = null;
+				  modal.hide();
+				  return;
+				}
+				const $td = selectedCell.element;
+				let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial`;
+				css = css.replace(/background-color:\s*#[0-9a-fA-F]+;/, `background-color: #${newColor};`);
+				css = css.replace(/color:\s*#[0-9a-fA-F]+;/, 'color: #000000;');
+				if (!css.includes('background-color')) css += `;background-color: #${newColor}`;
+				if (!css.includes('color')) css += ';color: #000000';
+				css = css.replace(/;?\s*cursor:\s*not-allowed;/, '');
+				$td.css(css.split(';').reduce((obj, style) => {
+				  const [key, value] = style.split(':').map(s => s.trim());
+				  if (key && value) obj[key] = value;
+				  return obj;
+				}, {}));
+				$td.attr('style', css);
+				$td.removeClass('disabled-cell');
+				formats[rowIndex][`col${colIndex + 1}`] = css;
+				updateCell(rowIndex, colIndex, $td.text(), totalColumnIndex, validColumnIndices, newColor, $td);
+				selectedCell.element.removeClass('selected-cell');
+				selectedCell = null;
+				modal.hide();
+			  });
+			});
+			$td.on('click', function (e) {
+			  var $this = $(this);
+			  if ($this.find('input').length > 0) return;
+			  if (selectedCell) {
+				selectedCell.element.removeClass('selected-cell');
+			  }
+			  selectedCell = { row: rowIndex, col: colIndex, element: $this };
+			  $this.addClass('selected-cell');
+			  var currentText = $this.text() || '';
+			  var currentBgColor = $this.css('background-color') || '#ffffff';
+			  var cellPadding = parseFloat($this.css('padding') || 5);
+			  var isMerged = $this.attr('rowspan') || $this.attr('colspan');
+			  var hasRowSpan = $this.attr('rowspan') > 1;
+			  var $input = $('<input>').attr('type', 'text').val(currentText).css({
+				'width': '100%',
+				'height': '100%',
+				'box-sizing': 'border-box',
+				'padding': cellPadding + 'px',
+				'font-size': $this.css('font-size'),
+				'font-family': $this.css('font-family'),
+				'font-weight': $this.css('font-weight'),
+				'text-align': isMerged ? 'center' : $this.css('text-align'),
+				'color': '#000000',
+				'background-color': currentBgColor,
+				'border': '1px solid #ccc',
+				'margin': 0,
+				'display': 'block',
+				'outline': 'none',
+				'white-space': 'normal',
+				'word-wrap': 'break-word'
+			  });
+			  $this.empty().append($input);
+			  $input.focus();
+			  var debouncedUpdate = debounce(function (newValue) {
+				var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+				if (safeValue !== currentText) {
+				  updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+				}
+				$this.text(safeValue);
+				$this.css({
+				  'background-color': currentBgColor,
+				  'color': '#000000',
+				  'text-align': isMerged ? 'center' : $this.css('text-align'),
+				  'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+				  'overflow': 'visible',
+				  'display': 'table-cell'
+				});
+				$input.remove();
+				$this.addClass('selected-cell');
+			  }, 200);
+			  $input.on('input', function () {
+				var newValue = $(this).val() || '';
+				debouncedUpdate(newValue);
+			  });
+			  $input.on('blur keypress', function (e) {
+				if (e.type === 'blur' || e.which === 13) {
+				  var newValue = $(this).val() || '';
+				  var safeValue = newValue === null || newValue === undefined || newValue.trim() === '' ? '' : newValue.trim();
+				  if (safeValue !== currentText) {
+					updateCell($this.data('row'), $this.data('col'), safeValue, totalColumnIndex, validColumnIndices, null, $this);
+				  }
+				  $this.text(safeValue);
+				  $this.css({
+					'background-color': currentBgColor,
+					'color': '#000000',
+					'text-align': isMerged ? 'center' : $this.css('text-align'),
+					'vertical-align': hasRowSpan ? 'middle' : $this.css('vertical-align'),
+					'overflow': 'visible',
+					'display': 'table-cell'
+				  });
+				  $this.removeClass('selected-cell');
+				  $(this).remove();
+				}
+			  });
+			});
+		  } else {
+			$td.css('pointer-events', 'none');  // CHẶN CHO TOTAL/LOCKED
+		  }
+		  $tr.append($td);
+		});
+		$fragment.append($tr);
+	  });
+	  $tbody.append($fragment);
+	  $table.css({
+		'table-layout': 'fixed',
+		'width': 'auto',
+		'border-collapse': 'collapse',
+		'display': 'table !important'
+	  }).show();
+	  if (selectedCell) {
+		const $newSelectedTd = $('#excelTable tbody tr').eq(selectedCell.row).find('td').eq(selectedCell.col + 1);
+		$newSelectedTd.addClass('selected-cell');
+	  }
+	  selectedRows.forEach(rowIndex => {
+		$('#excelTable tbody tr').eq(rowIndex).find('.row-checkbox').prop('checked', true);
+	  });
+	}
 
 		function updateCell(row, col, value, totalColumnIndex, validColumnIndices, newBgColor, $td) {
 			if (col === totalColumnIndex) return;
@@ -632,59 +1126,59 @@
 			});
 		}
 
-		function updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths) {
-			if (totalColumnIndex === -1 || !validColumnIndices.length) return;
-			let sum = 0;
-			validColumnIndices.forEach(validCol => {
-				const cellValue = tableData[row][validCol] || '';
-				const numValue = parseFloat(cellValue);
-				if (!isNaN(numValue)) sum += numValue;
-			});
-			tableData[row][totalColumnIndex] = Math.floor(sum) === sum ? sum.toString() : sum.toFixed(2);
-			const $totalCell = $('#excelTable tbody tr').eq(row).find('td').eq(totalColumnIndex + 1);
-			if ($totalCell.length) {
-				$totalCell.text(tableData[row][totalColumnIndex]);
-			}
-			var planId = @Model.Id;
-			var totalCell = {
-				PlanId: planId,
-				RowId: row + 1,
-				ColumnId: totalColumnIndex + 1,
-				Name: tableData[row][totalColumnIndex],
-				BackgroundColor: formats[row][`col${totalColumnIndex + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'f0f0f0',
-				FontColor: '000000',
-				FontSize: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
-				FontWeight: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
-				TextAlign: formats[row][`col${totalColumnIndex + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || 'center',
-				FontFamily: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Times New Roman',
-				Rowspan: 1,
-				Colspan: 1,
-				RowHeight: rowHeights[row] || 30,
-				ColWidth: colWidths[totalColumnIndex] || 60,
-				InputSettings: '',
-				IsHidden: false,
-				IsFileUpload: false,
-				IsDeleted: false,
-				IsLocked: false
-			};
-			$.ajax({
-				url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
-				type: 'POST',
-				contentType: 'application/json',
-				data: JSON.stringify([totalCell]),
-				success: function (response) {
-					if (!response.success) {
-						alert(response.message);
-					} else {
-						formats = response.formats || formats;
-						renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
-					}
-				},
-				error: function () {
-					alert('Đã có lỗi xảy ra khi cập nhật ô tổng cộng.');
-				}
-			});
+	function updateTotalCell(row, totalColumnIndex, validColumnIndices, formats, rowHeights, colWidths) {
+	  if (totalColumnIndex === -1 || !validColumnIndices.length) return;
+	  let sum = 0;
+	  validColumnIndices.forEach(validCol => {
+		const cellValue = tableData[row][validCol] || '';
+		const numValue = parseFloat(cellValue);
+		if (!isNaN(numValue)) sum += numValue;
+	  });
+	  tableData[row][totalColumnIndex] = Math.floor(sum) === sum ? sum.toString() : sum.toFixed(2);
+	  const $totalCell = $('#excelTable tbody tr').eq(row).find('td').eq(totalColumnIndex + 1);
+	  if ($totalCell.length) {
+		$totalCell.text(tableData[row][totalColumnIndex]);
+	  }
+	  var planId = @Model.Id;
+	  var totalCell = {
+		PlanId: planId,
+		RowId: row + 1,
+		ColumnId: totalColumnIndex + 1,
+		Name: tableData[row][totalColumnIndex],
+		BackgroundColor: formats[row][`col${totalColumnIndex + 1}`]?.match(/background-color:\s*#[0-9a-fA-F]+/)?.[0]?.replace('background-color: #', '') || 'ffffff',  // FALLBACK TRẮNG
+		FontColor: '000000',
+		FontSize: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-size:\s*[^;]+/)?.[0]?.replace('font-size: ', '') || '11pt',
+		FontWeight: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-weight:\s*[^;]+/)?.[0]?.replace('font-weight: ', '') || 'normal',
+		TextAlign: formats[row][`col${totalColumnIndex + 1}`]?.match(/text-align:\s*[^;]+/)?.[0]?.replace('text-align: ', '') || 'center',
+		FontFamily: formats[row][`col${totalColumnIndex + 1}`]?.match(/font-family:\s*[^;]+/)?.[0]?.replace('font-family: ', '') || 'Times New Roman',
+		Rowspan: 1,
+		Colspan: 1,
+		RowHeight: rowHeights[row] || 30,
+		ColWidth: colWidths[totalColumnIndex] || 60,
+		InputSettings: '',
+		IsHidden: false,
+		IsFileUpload: false,
+		IsDeleted: false,
+		IsLocked: false
+	  };
+	  $.ajax({
+		url: '@Url.Action("UpdateCell", "DetailSettingPlan")',
+		type: 'POST',
+		contentType: 'application/json',
+		data: JSON.stringify([totalCell]),
+		success: function (response) {
+		  if (!response.success) {
+			alert(response.message);
+		  } else {
+			formats = response.formats || formats;
+			renderTable(tableData, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells);
+		  }
+		},
+		error: function () {
+		  alert('Đã có lỗi xảy ra khi cập nhật ô tổng cộng.');
 		}
+	  });
+	};
 
 		function rgbToHex(rgb) {
 			if (rgb.startsWith('#')) return rgb;

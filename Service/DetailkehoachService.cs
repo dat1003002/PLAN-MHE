@@ -49,38 +49,21 @@ namespace PLANMHE.Service
       {
         throw new Exception("Không có dữ liệu bảng.");
       }
-      var tableData = new List<List<object>>();
-      var formats = new List<Dictionary<string, string>>();
-      var lockedCells = new List<Dictionary<string, bool>>();
       var cellDictionary = planCells
           .GroupBy(pc => (pc.RowId, pc.ColumnId))
           .Select(g => g.First())
           .ToDictionary(pc => (pc.RowId, pc.ColumnId), pc => pc);
+      var nextRowsToEnable = selectedRows.Where(row => row < maxRow - 1).Select(row => row + 1).ToList();
+      var tableData = new List<List<object>>();
+      var formats = new List<Dictionary<string, string>>();
+      var lockedCells = new List<Dictionary<string, bool>>();
+      var updatedCells = new List<PlanCell>();
       for (int row = 1; row <= maxRow; row++)
       {
         var rowData = new List<object>();
         var rowFormats = new Dictionary<string, string>();
         var rowLocked = new Dictionary<string, bool>();
-        for (int col = 1; col <= maxCol; col++)
-        {
-          var cellKey = (row, col);
-          var cell = cellDictionary.ContainsKey(cellKey) ? cellDictionary[cellKey] : null;
-          rowData.Add(cell?.Name?.Trim() ?? "");
-          rowLocked[$"col{col}"] = true;
-          rowFormats[$"col{col}"] = cell != null
-              ? $"background-color: #{cell.BackgroundColor}; color: #{cell.FontColor}; font-size: {cell.FontSize}; font-weight: {cell.FontWeight}; text-align: {cell.TextAlign}; font-family: {cell.FontFamily}"
-              : "background-color: #ffffff; color: #000000; font-size: 11pt; font-weight: normal; text-align: left; font-family: Arial";
-        }
-        tableData.Add(rowData);
-        formats.Add(rowFormats);
-        lockedCells.Add(rowLocked);
-      }
-      var nextRowsToEnable = selectedRows.Where(row => row < maxRow - 1).Select(row => row + 1).ToList();
-      var updatedCells = new List<PlanCell>();
-      for (int row = 1; row <= maxRow; row++)
-      {
         var isNextRow = nextRowsToEnable.Contains(row - 1);
-        var isSelectedRow = selectedRows.Contains(row - 1);
         for (int col = 1; col <= maxCol; col++)
         {
           var cellKey = (row, col);
@@ -90,7 +73,7 @@ namespace PLANMHE.Service
             RowId = row,
             ColumnId = col,
             Name = "",
-            BackgroundColor = "ffffff",
+            BackgroundColor = "ffffff",  // FALLBACK TRẮNG TỪ DB
             FontColor = "000000",
             FontSize = "11pt",
             FontWeight = "normal",
@@ -105,13 +88,22 @@ namespace PLANMHE.Service
             IsFileUpload = false,
             IsDeleted = false
           };
-          cell.IsLocked = !isNextRow;
+          rowData.Add(cell.Name?.Trim() ?? "");
+          bool isLocked = !isNextRow;
+          rowLocked[$"col{col}"] = isLocked;
+          cell.IsLocked = isLocked;
           if (isNextRow)
           {
-            lockedCells[row - 1][$"col{col}"] = false;
+            rowLocked[$"col{col}"] = false;
           }
+          var baseCss = $"background-color: #{cell.BackgroundColor ?? "ffffff"}; color: #{cell.FontColor ?? "000000"}; font-size: {cell.FontSize ?? "11pt"}; font-weight: {cell.FontWeight ?? "normal"}; text-align: {cell.TextAlign ?? "left"}; font-family: {cell.FontFamily ?? "Arial"}";
+          var fullCss = isLocked ? $"{baseCss}; cursor: not-allowed" : baseCss;  // CHỈ THÊM CURSOR, GIỮ MÀU DB
+          rowFormats[$"col{col}"] = fullCss;
           updatedCells.Add(cell);
         }
+        tableData.Add(rowData);
+        formats.Add(rowFormats);
+        lockedCells.Add(rowLocked);
       }
       await _repository.UpdatePlanCellsAsync(updatedCells);
       return new LockRowsResult

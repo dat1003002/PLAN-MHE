@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+  using Microsoft.AspNetCore.Mvc;
 using PLANMHE.Models;
 using PLANMHE.Service;
 using System;
@@ -148,7 +148,6 @@ namespace PLANMHE.Controllers
     {
       if (file == null || file.Length == 0)
         return Json(new { success = false, message = "Vui lòng chọn file Excel." });
-
       try
       {
         using var stream = new MemoryStream();
@@ -157,13 +156,10 @@ namespace PLANMHE.Controllers
         var worksheet = package.Workbook.Worksheets[0];
         int originalRowCount = worksheet.Dimension?.Rows ?? 0;
         int colCount = worksheet.Dimension?.Columns ?? 0;
-
         if (originalRowCount == 0 || colCount == 0)
           return Json(new { success = false, message = "File Excel không chứa dữ liệu." });
-
         int lastNonEmptyRow = GetLastNonEmptyRow(worksheet, colCount);
         int rowCount = lastNonEmptyRow > 0 ? lastNonEmptyRow + 1 : 1;
-
         var tableData = new List<List<object>>(rowCount);
         var cellFormats = new List<Dictionary<string, string>>(rowCount);
         var mergedCells = new List<Dictionary<string, object>>();
@@ -172,7 +168,6 @@ namespace PLANMHE.Controllers
         int totalColumnIndex = -1;
         List<int> validColumnIndices = new List<int>();
         string[] validColumns = { "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN", "Thứ 2", "Thứ 3" };
-
         var headerRow = worksheet.Cells[1, 1, 1, colCount].Select(c => c.Text?.Trim() ?? "").ToArray();
         bool hasTotalColumn = false;
         for (int col = 0; col < colCount; col++)
@@ -193,13 +188,11 @@ namespace PLANMHE.Controllers
           colCount++;
           totalColumnIndex = colCount - 1;
         }
-
         var planCells = new List<PlanCell>(rowCount * colCount);
         for (int row = 1; row <= rowCount; row++)
         {
           var rowData = new List<object>(colCount);
           var isNewRow = row == rowCount && row == lastNonEmptyRow + 1;
-
           for (int col = 1; col <= colCount; col++)
           {
             if (isNewRow)
@@ -211,7 +204,7 @@ namespace PLANMHE.Controllers
                 Name = "",
                 RowId = row,
                 ColumnId = col,
-                BackgroundColor = col == totalColumnIndex + 1 ? "f0f0f0" : "ffffff",
+                BackgroundColor = "ffffff",  // FALLBACK TRẮNG, KHÔNG XÁM CHO TOTAL
                 FontColor = "000000",
                 FontSize = "11pt",
                 FontWeight = "normal",
@@ -262,7 +255,6 @@ namespace PLANMHE.Controllers
           }
           tableData.Add(rowData);
         }
-
         foreach (var mergedRange in worksheet.MergedCells)
         {
           var range = worksheet.Cells[mergedRange];
@@ -280,15 +272,14 @@ namespace PLANMHE.Controllers
               cell.TextAlign = "center";
             }
             mergedCells.Add(new Dictionary<string, object>
-                {
-                    { "startRow", startRow },
-                    { "startCol", startCol },
-                    { "rowSpan", endRow - startRow + 1 },
-                    { "colSpan", endCol - startCol + 1 }
-                });
+            {
+                { "startRow", startRow },
+                { "startCol", startCol },
+                { "rowSpan", endRow - startRow + 1 },
+                { "colSpan", endCol - startCol + 1 }
+            });
           }
         }
-
         for (int row = 2; row <= lastNonEmptyRow; row++)
         {
           double total = 0;
@@ -306,7 +297,6 @@ namespace PLANMHE.Controllers
         {
           tableData[rowCount - 1][totalColumnIndex] = "0";
         }
-
         for (int row = 1; row <= rowCount; row++)
         {
           var isNewRow = row == rowCount && row == lastNonEmptyRow + 1;
@@ -315,19 +305,18 @@ namespace PLANMHE.Controllers
           for (int col = 1; col <= colCount; col++)
           {
             var format = new Dictionary<string, string>
-                {
-                    { "backgroundColor", isNewRow ? (col == totalColumnIndex + 1 ? "f0f0f0" : "ffffff") : GetCellBackgroundColor(worksheet.Cells[row, col]) },
-                    { "fontColor", isNewRow ? "000000" : GetCellFontColor(worksheet.Cells[row, col]) },
-                    { "fontSize", isNewRow ? "11pt" : worksheet.Cells[row, col].Style.Font.Size.ToString() + "pt" },
-                    { "fontWeight", isNewRow ? "normal" : (worksheet.Cells[row, col].Style.Font.Bold ? "bold" : "normal") },
-                    { "textAlign", isNewRow ? (col == totalColumnIndex + 1 ? "center" : "left") : worksheet.Cells[row, col].Style.HorizontalAlignment.ToString().ToLower() },
-                    { "fontFamily", isNewRow ? (col == totalColumnIndex + 1 ? "Times New Roman" : "Arial") : (worksheet.Cells[row, col].Style.Font.Name ?? "Arial") }
-                };
+            {
+                { "backgroundColor", isNewRow ? "ffffff" : GetCellBackgroundColor(worksheet.Cells[row, col]) },  // FALLBACK TRẮNG, KHÔNG XÁM
+                { "fontColor", isNewRow ? "000000" : GetCellFontColor(worksheet.Cells[row, col]) },
+                { "fontSize", isNewRow ? "11pt" : worksheet.Cells[row, col].Style.Font.Size.ToString() + "pt" },
+                { "fontWeight", isNewRow ? "normal" : (worksheet.Cells[row, col].Style.Font.Bold ? "bold" : "normal") },
+                { "textAlign", isNewRow ? (col == totalColumnIndex + 1 ? "center" : "left") : worksheet.Cells[row, col].Style.HorizontalAlignment.ToString().ToLower() },
+                { "fontFamily", isNewRow ? (col == totalColumnIndex + 1 ? "Times New Roman" : "Arial") : (worksheet.Cells[row, col].Style.Font.Name ?? "Arial") }
+            };
             rowFormats[$"col{col}"] = ConvertFormatToCss(format);
           }
           cellFormats.Add(rowFormats);
         }
-
         for (int col = 1; col <= colCount; col++)
         {
           var column = worksheet.Column(col);
@@ -335,9 +324,7 @@ namespace PLANMHE.Controllers
           double pixelWidth = Math.Round(excelWidth * 7.5);
           colWidths.Add(Math.Max(pixelWidth, 60));
         }
-
         await _detailKehoachService.AddPlanCellsAsync(planCells);
-
         return Json(new
         {
           success = true,
@@ -466,24 +453,60 @@ namespace PLANMHE.Controllers
         return Json(new { success = false, message = $"Lỗi khi khóa dòng: {ex.Message}" });
       }
     }
-
     private string GetCellBackgroundColor(ExcelRange cell)
     {
       var fill = cell.Style.Fill;
-      if (fill.PatternType == ExcelFillStyle.Solid && fill.BackgroundColor != null)
+      if (fill.PatternType != ExcelFillStyle.Solid) return "ffffff";
+
+      var bg = fill.BackgroundColor;
+      string rgb = "ffffff";
+
+      // Lấy RGB từ Rgb hoặc LookupColor
+      if (!string.IsNullOrEmpty(bg.Rgb))
       {
-        if (!string.IsNullOrEmpty(fill.BackgroundColor.Rgb))
+        rgb = bg.Rgb.Length == 8 ? bg.Rgb.Substring(2) : bg.Rgb; // Bỏ alpha nếu có
+      }
+      else
+      {
+        var color = bg.LookupColor(); // Trả về "#AARRGGBB"
+        if (!string.IsNullOrEmpty(color) && color.Length >= 6)
         {
-          string rgb = fill.BackgroundColor.Rgb;
-          return rgb.Length == 8 ? rgb.Substring(2).ToLower() : rgb.ToLower();
-        }
-        else if (fill.BackgroundColor.Theme != null)
-        {
-          var themeColor = fill.BackgroundColor.LookupColor();
-          return themeColor?.Length == 8 ? themeColor.Substring(2).ToLower() : themeColor?.ToLower() ?? "ffffff";
+          rgb = color.Substring(color.Length - 6); // Lấy 6 ký tự cuối
         }
       }
-      return "ffffff";
+
+      // ÁP DỤNG TINT (màu nhạt) – ÉP KIỂU (double)
+      if (bg.Tint != 0)
+      {
+        int r = int.Parse(rgb.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        int g = int.Parse(rgb.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        int b = int.Parse(rgb.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+
+        var tinted = ApplyTint(r, g, b, (double)bg.Tint); // ÉP KIỂU TẠI ĐÂY
+
+        rgb = tinted.R.ToString("X2") + tinted.G.ToString("X2") + tinted.B.ToString("X2");
+      }
+
+      return rgb.ToLower(); // Trả về "ffffff", "ffcc00", v.v.
+    }
+    private (byte R, byte G, byte B) ApplyTint(int r, int g, int b, double tint)
+    {
+      double R = r / 255.0, G = g / 255.0, B = b / 255.0;
+      if (tint < 0)
+      {
+        R *= (1 + tint); G *= (1 + tint); B *= (1 + tint);
+      }
+      else
+      {
+        R = R * (1 - tint) + tint;
+        G = G * (1 - tint) + tint;
+        B = B * (1 - tint) + tint;
+      }
+      return (
+          (byte)Math.Round(R * 255),
+          (byte)Math.Round(G * 255),
+          (byte)Math.Round(B * 255)
+      );
     }
 
     private string GetCellFontColor(ExcelRange cell)
