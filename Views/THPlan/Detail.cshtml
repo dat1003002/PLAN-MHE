@@ -3,6 +3,8 @@
     ViewData["Title"] = "Chi Tiết Kế Hoạch";
     ViewData["CurrentPage"] = "/THPlan/Detail";
 }
+<link rel="stylesheet" href="~/css/site.css" type="text/css" />
+
 <div class="main-box">
     <div class="header-section">
         <div class="left-icon"><i class="ace-icon fa fa-star orange"></i></div>
@@ -10,33 +12,43 @@
         <div class="right-settings"><i class="fa fa-regular fa-gear"></i></div>
     </div>
 </div>
+
 <div class="outer-wrapper">
+    <!-- Tabs Header -->
     <div class="tabs">
-        <button class="active">Thực Hiện kế hoạch</button>
+        <button class="tab-btn active" data-target="tab1">Thực Hiện kế hoạch</button>
+        <button class="tab-btn" data-target="tab2">Xác Nhận kế hoạch</button>
     </div>
-    <div class="tab-pane">
-        <div class="main-section" style="background-color: #d9edf7; color:#31708f; border-color: #bce8f1;">
-            <ul style="display:flex; align-items: center;">
-                <li class="fa fa-hand-o-right" style="display:flex; color: #31708f; font-weight: 600;">
-                    <p style="font-size: 15px;font-family: ui-monospace; margin:1px; padding-right: 10px;">
-                        Xác nhận để hoàn thành kế hoạch
-                    </p>
-                </li>
-                <li>
-                    <button type="button" id="confirmPlanBtn" class="import"
-                            style="background:#428BCA; color: white; border-radius: 3px; border: 1px solid #2E6589; border-bottom-width: 4px; padding: 2px 7px; font-size: 12px; font-family: segoeui;">Xác Nhận
-                    </button>
-                </li>
-            </ul>
-        </div>
+
+    <!-- Tab 1: Bảng Excel-like -->
+    <div class="tab-pane active" id="tab1">
         <div id="tableContainer" class="table-container">
             <table id="excelTable" class="table excel-table" style="display: none;">
                 <tbody></tbody>
             </table>
         </div>
     </div>
+
+    <!-- Tab 2: Xác Nhận Kế Hoạch -->
+    <div class="tab-pane" id="tab2">
+        <div class="main-section" style="background-color: #d9edf7; color:#31708f; border-color: #bce8f1;">
+            <ul style="display:flex; align-items: center;">
+                <li class="fa fa-hand-o-right" style="display:flex; color: #31708f; font-weight: 600;">
+                    <p style="font-size: 15px; font-family: ui-monospace; margin:1px; padding-right: 10px;">
+                        Xác nhận để hoàn thành kế hoạch
+                    </p>
+                </li>
+                <li>
+                    <button type="button" id="confirmPlanBtn" class="import"
+                        style="background:#428BCA; color: white; border-radius: 3px; border: 1px solid #2E6589; border-bottom-width: 4px; padding: 2px 7px; font-size: 12px; font-family: segoeui;">
+                        Xác Nhận
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
 $(document).ready(function () {
     let tableData = @Html.Raw(ViewBag.TableData ?? "[]");
@@ -56,13 +68,9 @@ $(document).ready(function () {
     function renderTable(data, formats, mergedCells, rowHeights, colWidths, totalColumnIndex, validColumnIndices, lockedCells) {
         const $table = $('#excelTable');
         const $tbody = $table.find('tbody').empty();
-
-        // Tiền xử lý kích thước cột và hàng
         const pixelColWidths = colWidths.map(width => Math.max(Math.round(width || 60), 60));
         const pixelRowHeights = rowHeights.map(height => Math.max(Math.round(height || 30), 30));
         const skipCells = {};
-
-        // Sử dụng DocumentFragment để tối ưu DOM
         const fragment = document.createDocumentFragment();
 
         data.forEach((rowData, rowIndex) => {
@@ -88,10 +96,11 @@ $(document).ready(function () {
                     'overflow': 'visible'
                 });
 
-                let css = formats[rowIndex][`col${colIndex + 1}`] || `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 14px; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: Segoe UI`;
+                let css = formats[rowIndex][`col${colIndex + 1}`] || 
+                    `background-color: #${colIndex === totalColumnIndex ? 'f0f0f0' : 'ffffff'}; color: #000000; font-size: 14px; font-weight: normal; text-align: ${colIndex === totalColumnIndex ? 'center' : 'left'}; font-family: Segoe UI`;
+
                 let isMerged = false;
                 let hasRowSpan = false;
-
                 mergedCells.forEach(merge => {
                     if (merge.startRow === rowIndex + 1 && merge.startCol === colIndex + 1) {
                         isMerged = true;
@@ -218,7 +227,6 @@ $(document).ready(function () {
             });
             fragment.appendChild($tr[0]);
         });
-
         $tbody.append(fragment);
         $table.css({
             'table-layout': 'fixed',
@@ -265,9 +273,7 @@ $(document).ready(function () {
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(totalCell),
-            success: function (response) {
-                if (!response.success) return;
-            },
+            success: function (response) { if (!response.success) return; },
             error: function () {}
         });
     }
@@ -326,7 +332,7 @@ $(document).ready(function () {
     $('#confirmPlanBtn').on('click', async function() {
         const $btn = $(this);
         const originalText = $btn.html();
-        $btn.prop('disabled', true).html('⏳ Đang xác nhận...');
+        $btn.prop('disabled', true).html('Đang xác nhận...');
         try {
             const planId = @Model.Id;
             const response = await $.ajax({
@@ -336,14 +342,14 @@ $(document).ready(function () {
             });
             if (response.success) {
                 $btn.fadeOut(500, function() {
-                    $(this).closest('li').html('<span style="color:#28a745; font-weight:bold; font-size:14px;">✅ HOÀN THÀNH</span>');
+                    $(this).closest('li').html('<span style="color:#28a745; font-weight:bold; font-size:14px;">HOÀN THÀNH</span>');
                 });
                 $('#excelTable td').off('click').addClass('disabled-cell').css('cursor', 'not-allowed');
                 $('.main-section').html(`
                     <ul style="display:flex; align-items: center;">
                         <li style="color: #28a745; font-weight: 600;">
                             <p style="font-size: 15px; color: #28a745; padding-right: 10px;">
-                                KẾ HOẠCH ĐÃ HOÀN THÀNH ✅
+                                KẾ HOẠCH ĐÃ HOÀN THÀNH
                             </p>
                         </li>
                     </ul>
@@ -366,5 +372,28 @@ $(document).ready(function () {
             $btn.prop('disabled', false).html(originalText);
         }
     });
+
+    // ==================== TAB SWITCHER – DỰA HOÀN TOÀN VÀO site.css ====================
+    $('.tab-btn').on('click', function() {
+        const target = $(this).data('target');
+
+        // Cập nhật active class (CSS trong site.css)
+        $('.tab-btn').removeClass('active');
+        $(this).addClass('active');
+
+        // Ẩn/hiện tab pane
+        $('.tab-pane').removeClass('active').hide();
+        $('#' + target).addClass('active').show();
+
+        // Nếu về tab1 → đảm bảo bảng hiện
+        if (target === 'tab1') {
+            $('#excelTable').show();
+        }
+    });
+
+    // Khởi tạo: ẩn tất cả tab pane trừ active
+    $('.tab-pane').not('.active').hide();
+    // ===========================================================================
+
 });
 </script>

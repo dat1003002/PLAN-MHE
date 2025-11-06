@@ -1,3 +1,11 @@
+/*
+ * File: site.css
+ * Description: CSS styles for the Production Plan Implementation page (Detail.cshtml).
+ * Author: Generated based on provided styles.
+ * Date: November 04, 2025
+ * Usage: Link this file in your _Layout.cshtml or directly in the view: <link rel="stylesheet" href="~/css/site.css" />
+ */
+
 * {
   margin: 0;
   padding: 0;
@@ -19,17 +27,19 @@ body {
   border-left: 1px solid #ccc;
   border-right: 1px solid #ccc;
 }
+
 .plan-link {
   color: #337ab7;
   text-decoration: none;
 }
+
   .plan-link:hover {
     text-decoration: underline;
   }
 
 .table-container {
-  padding-left: 20px;
-  padding-right: 20px;
+/*  padding-left: 20px;
+  padding-right: 20px;*/
   overflow-x: auto;
   width: 100%;
   max-width: none;
@@ -116,32 +126,33 @@ body {
   .pagination .page-link {
     text-align: center;
   }
-    .excel-table td:not(.header-cell):not(.disabled):hover {
-      cursor: pointer;
-    }
 
-    .excel-table td input {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 30%;
-      margin-left: 18px;
-      height: 100%;
-      box-sizing: border-box;
-      white-space: normal;
-      word-wrap: break-word;
-      border: 1px solid #ccc;
-      padding: 5px;
-    }
+.excel-table td:not(.header-cell):not(.disabled):hover {
+  cursor: pointer;
+}
 
-    .excel-table td.disabled:hover {
-      cursor: default;
-    }
+.excel-table td input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  margin-left: 18px;
+  height: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  word-wrap: break-word;
+  border: 1px solid #ccc;
+  padding: 5px;
+}
 
-  .excel-table tr:first-child td {
-    font-weight: bold;
-    cursor: default;
-  }
+.excel-table td.disabled:hover {
+  cursor: default;
+}
+
+.excel-table tr:first-child td {
+  font-weight: bold;
+  cursor: default;
+}
 
 .outer-wrapper {
   margin-top: 20px;
@@ -159,20 +170,20 @@ body {
   .tabs button {
     padding: 8px 15px;
     border: none;
-    background-color: #d3e0f0;
     cursor: pointer;
     font-size: 13px;
     font-family: segoeui;
     font-weight: bold;
-    color: #2c3e50;
+    color: white;
     margin-right: 2px;
     outline: none;
-    background-color: white;
+    background-color: #428BCA;
   }
 
 .tab-pane {
   background: white;
-  padding-top: 20px;
+  padding: 20px;
+
 }
 
 .main-section {
@@ -180,8 +191,6 @@ body {
   padding: 10px;
   border-radius: 10px;
   border: 1px solid #f0e68c;
-  margin-right: 20px;
-  margin-left: 20px;
   font-family: segoeui;
 }
 
@@ -203,7 +212,9 @@ body {
   padding-bottom: 20px;
 }
 
-  .group-setting button, .group-setting input[type="file"]::file-selector-button, .group-setting input[type="color"] {
+  .group-setting button,
+  .group-setting input[type="file"]::file-selector-button,
+  .group-setting input[type="color"] {
     background-color: #428bca;
     border: 1px solid #2E6589;
     border-bottom-width: 2px;
@@ -226,7 +237,7 @@ body {
 }
 
 .disabled-cell {
-/*  background-color: #f0f0f0 !important;*/
+  /* background-color: #f0f0f0 !important; */
   cursor: not-allowed;
   text-align: center !important;
   font-family: 'Times New Roman', Times, serif !important;
@@ -439,7 +450,7 @@ select {
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 10px;
   background-color: #fff;
   font-family: segoeui;
 }
@@ -456,7 +467,8 @@ table {
   width: 100%;
 }
 
-.status-using, .status-deleted {
+.status-using,
+.status-deleted {
   display: inline-flex;
   align-items: center;
   padding: 3px 8px;
@@ -475,7 +487,8 @@ table {
   color: #fff;
 }
 
-  .status-using input[type="radio"], .status-deleted input[type="radio"] {
+  .status-using input[type="radio"],
+  .status-deleted input[type="radio"] {
     appearance: none;
     width: 12px;
     height: 12px;
@@ -486,7 +499,8 @@ table {
     position: relative;
   }
 
-    .status-using input[type="radio"]:checked::before, .status-deleted input[type="radio"]:checked::before {
+    .status-using input[type="radio"]:checked::before,
+    .status-deleted input[type="radio"]:checked::before {
       content: '';
       position: absolute;
       top: 2px;
@@ -501,8 +515,9 @@ table {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
-  align-items:center;
+  align-items: center;
 }
+
 .search-date p {
   color: #333;
   font-weight: bold;
@@ -516,11 +531,11 @@ table {
   width: 15%;
 }
 
-    .search-area input:focus {
-      outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    }
+  .search-area input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
 
 .options {
   display: flex;
@@ -639,7 +654,10 @@ table {
   border-radius: 3px;
   cursor: default;
 }
-
+.tab-btn.active {
+  background-color: white !important;
+  color: black !important;
+}
   .status-button:hover {
     background-color: #218838;
   }
@@ -758,7 +776,9 @@ table {
       width: 100%;
     }
 
-    .group-setting button, .group-setting input[type="file"], .group-setting input[type="color"] {
+    .group-setting button,
+    .group-setting input[type="file"],
+    .group-setting input[type="color"] {
       width: 100%;
       margin-bottom: 10px;
     }
