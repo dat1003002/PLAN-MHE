@@ -4,6 +4,7 @@ using PLANMHE.Services.Interfaces;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PLANMHE.Controllers
 {
@@ -32,7 +33,7 @@ namespace PLANMHE.Controllers
         ViewBag.UserTypes = await _userTypeService.GetAllUserTypesAsync();
         return View(users);
       }
-      catch (Exception ex)
+      catch (Exception)
       {
         return View(new List<User>());
       }
@@ -45,9 +46,8 @@ namespace PLANMHE.Controllers
       {
         var user = await _userService.GetUserByIdAsync(id);
         if (user == null)
-        {
           return NotFound(new { message = "Người dùng không tồn tại!" });
-        }
+
         return Ok(user);
       }
       catch (Exception ex)
@@ -60,9 +60,8 @@ namespace PLANMHE.Controllers
     public async Task<IActionResult> CreateUserType([FromBody] UserType userType)
     {
       if (!ModelState.IsValid)
-      {
         return BadRequest(ModelState);
-      }
+
       try
       {
         await _userTypeService.AddUserTypeAsync(userType);
@@ -74,13 +73,12 @@ namespace PLANMHE.Controllers
       }
     }
 
-    [HttpPut]
+    [HttpPost] // Đổi từ PUT → POST để chạy trên IIS
     public async Task<IActionResult> UpdateUserType([FromBody] UserType userType)
     {
       if (!ModelState.IsValid)
-      {
         return BadRequest(ModelState);
-      }
+
       try
       {
         await _userTypeService.UpdateUserTypeAsync(userType);
@@ -104,6 +102,7 @@ namespace PLANMHE.Controllers
       {
         return BadRequest(new { message = "ID không hợp lệ!" });
       }
+
       try
       {
         await _userTypeService.DeleteUserTypeAsync(id);
@@ -118,44 +117,52 @@ namespace PLANMHE.Controllers
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] User user)
     {
+      if (user == null)
+        return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+
       if (!ModelState.IsValid)
       {
         var errors = ModelState.Values
             .SelectMany(v => v.Errors)
             .Select(e => e.ErrorMessage)
             .ToList();
-        return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
+        return Json(new { success = false, message = "Dữ liệu không hợp lệ.", errors });
       }
+
       try
       {
         await _userService.AddUserAsync(user);
-        return Ok(new { message = "Thêm người dùng thành công!" });
+        return Json(new { success = true, message = "Thêm người dùng thành công!" });
       }
       catch (Exception ex)
       {
-        return BadRequest(new { message = "Không thể thêm người dùng: " + ex.Message });
+        return Json(new { success = false, message = ex.Message });
       }
     }
 
-    [HttpPut]
+    [HttpPost] // CHỈ DÙNG POST → Không lỗi 405 trên IIS
     public async Task<IActionResult> UpdateUser([FromBody] User user)
     {
+      if (user == null)
+        return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+
       if (!ModelState.IsValid)
       {
         var errors = ModelState.Values
             .SelectMany(v => v.Errors)
             .Select(e => e.ErrorMessage)
             .ToList();
-        return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
+        return Json(new { success = false, message = "Dữ liệu không hợp lệ.", errors });
       }
+
       try
       {
         await _userService.UpdateUserAsync(user);
-        return Ok(new { message = "Cập nhật người dùng thành công!" });
+        return Json(new { success = true, message = "Cập nhật người dùng thành công!" });
       }
       catch (Exception ex)
       {
-        return BadRequest(new { message = "Không thể cập nhật người dùng: " + ex.Message });
+        return Json(new { success = false, message = ex.Message });
       }
     }
 
@@ -167,6 +174,7 @@ namespace PLANMHE.Controllers
       {
         return BadRequest(new { message = "ID không hợp lệ!" });
       }
+
       try
       {
         await _userService.DeleteUserAsync(id);

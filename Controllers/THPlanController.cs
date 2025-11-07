@@ -478,51 +478,53 @@ namespace PLANMHE.Controllers
         return Json(new { success = false, message = ex.Message });
       }
     }
-
     private async Task UpdateRowLockStatus(int planId, List<PlanCell> planCells, int totalColumnIndex, List<int> validColumnIndices, int maxRow)
     {
       var cellLookup = planCells.ToLookup(pc => (pc.RowId, pc.ColumnId));
       var cellsToUpdate = new List<PlanCell>();
 
-      for (int row = 2; row <= maxRow; row++)
+      for (int row = 3; row <= maxRow; row++)
       {
         var currentTotalCell = cellLookup[(row, totalColumnIndex + 1)].FirstOrDefault();
         var aboveTotalCell = cellLookup[(row - 1, totalColumnIndex + 1)].FirstOrDefault();
 
-        double currentTotal = ParseDouble(currentTotalCell?.Name);
-        double aboveTotal = ParseDouble(aboveTotalCell?.Name);
+        if (!TryParseDouble(aboveTotalCell?.Name, out double aboveTotal) || aboveTotal <= 0) continue;
+        if (!TryParseDouble(currentTotalCell?.Name, out double currentTotal)) continue;
 
         var sampleDataCell = validColumnIndices
             .Select(colIdx => cellLookup[(row, colIdx + 1)].FirstOrDefault())
             .FirstOrDefault(c => c != null && !c.IsLocked);
 
-        if (sampleDataCell != null && currentTotal >= aboveTotal && aboveTotalCell != null)
+        if (sampleDataCell != null && currentTotal >= aboveTotal)
         {
-          // Khóa toàn bộ dòng hiện tại
           foreach (var cell in planCells.Where(pc => pc.RowId == row && !pc.IsDeleted && !pc.IsHidden))
           {
-            cell.IsLocked = true;
-            cellsToUpdate.Add(cell);
+            if (!cell.IsLocked) { cell.IsLocked = true; cellsToUpdate.Add(cell); }
           }
 
-          // Mở dòng +2
           int nextRow = row + 2;
           if (nextRow <= maxRow)
           {
             foreach (var cell in planCells.Where(pc => pc.RowId == nextRow && !pc.IsDeleted && !pc.IsHidden && pc.ColumnId != totalColumnIndex + 1))
             {
-              cell.IsLocked = false;
-              cellsToUpdate.Add(cell);
+              if (cell.IsLocked) { cell.IsLocked = false; cellsToUpdate.Add(cell); }
             }
           }
         }
       }
 
-      foreach (var cell in cellsToUpdate)
+      foreach (var cell in cellsToUpdate.DistinctBy(c => new { c.RowId, c.ColumnId }))
         await _thPlanService.UpdatePlanCellAsync(cell);
     }
 
-    // Helper
+    private bool TryParseDouble(string text, out double value)
+    {
+      value = 0;
+      if (string.IsNullOrWhiteSpace(text)) return false;
+      var cleaned = text.Trim().Replace(",", ".");
+      return double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                            System.Globalization.CultureInfo.InvariantCulture, out value) && value >= 0;
+    }
     private double ParseDouble(string text) =>
         double.TryParse(text?.Replace(",", "."), System.Globalization.NumberStyles.Any,
             System.Globalization.CultureInfo.InvariantCulture, out double val) ? val : 0;
@@ -554,13 +556,11 @@ namespace PLANMHE.Controllers
         tableData.Add(rowData);
     }
 
-    // 2. TÔ MÀU TOÀN DÒNG NẾU CÓ 1 Ô NGÀY MỞ
     for (int row = 1; row <= maxRow; row++)
     {
         var rowFormats = new Dictionary<string, string>();
         bool isRowOpen = false;
 
-        // Kiểm tra: có ít nhất 1 ô ngày (Thứ 4 → Thứ 3) đang mở không?
         for (int col = 1; col <= maxCol; col++)
         {
             var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
@@ -574,12 +574,10 @@ namespace PLANMHE.Controllers
             }
         }
 
-        // Áp dụng cho TẤT CẢ ô trong dòng
         for (int col = 1; col <= maxCol; col++)
         {
             var cell = planCells.FirstOrDefault(pc => pc.RowId == row && pc.ColumnId == col && !pc.IsDeleted && !pc.IsHidden);
 
-            // MÀU NỀN: Dòng mở → #f0f0f0 | Cột tổng → #f0f0f0 | Còn lại → màu cell
             string bgColor = isRowOpen ? "f0f0f0" 
                              : (cell?.BackgroundColor ?? (col - 1 == totalColumnIndex ? "f0f0f0" : "ffffff"));
 
@@ -601,7 +599,6 @@ namespace PLANMHE.Controllers
         cellFormats.Add(rowFormats);
     }
 
-    // 3. MERGED + LOCKED + SIZE (giữ nguyên)
     foreach (var cell in planCells.Where(pc => (pc.Rowspan > 1 || pc.Colspan > 1) && !pc.IsDeleted && !pc.IsHidden))
     {
         mergedCells.Add(new Dictionary<string, object>
